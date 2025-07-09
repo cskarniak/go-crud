@@ -1,22 +1,39 @@
 {{ define "index" }}
-<h1>Liste des Articles</h1>
-<table class="table table-striped">
-  <thead>
-    <tr><th>#</th><th>Titre</th><th>Actions</th></tr>
-  </thead>
-  <tbody>
-    {{ range .articles }}
-    <tr>
-      <td>{{ .ID }}</td>
-      <td>{{ .Title }}</td>
-      <td>
-        <a class="btn btn-sm btn-primary" href="/articles/edit/{{ .ID }}">Éditer</a>
-        <form action="/articles/delete/{{ .ID }}" method="post" style="display:inline">
-          <button class="btn btn-sm btn-danger" type="submit">Supprimer</button>
-        </form>
-      </td>
-    </tr>
-    {{ end }}
-  </tbody>
-</table>
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="h3">Liste des Articles</h1>
+  <a href="/articles/new" class="btn btn-success">+ Ajouter</a>
+</div>
+
+{{ if not .articles }}
+  <div class="alert alert-warning">Aucun article pour l’instant.</div>
+{{ else }}
+  <div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">#</th>
+          <th scope="col">Titre</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range .articles }}
+        <tr>
+          <th scope="row">{{ .ID }}</th>
+          <td>{{ .Title }}</td>
+          <td>
+            <a href="/articles/edit/{{ .ID }}" class="btn btn-primary btn-sm me-1">Éditer</a>
+            <form action="/articles/delete/{{ .ID }}" method="post" class="d-inline">
+              <button class="btn btn-danger btn-sm"
+                      onclick="return confirm('Supprimer cet article ?')">
+                Supprimer
+              </button>
+            </form>
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+{{ end }}
 {{ end }}

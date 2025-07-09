@@ -1,17 +1,24 @@
 {{ define "edit" }}
-<h1>Modifier l'Article</h1>
-{{ if .error }}
-  <div class="alert alert-danger">{{ .error }}</div>
-{{ end }}
-<form action="/articles/update/{{ .article.ID }}" method="post">
-  <div class="mb-3">
-    <label class="form-label">Titre</label>
-    <input type="text" name="title" class="form-control" value="{{ .article.Title }}" required>
+<div class="card shadow-sm">
+  <div class="card-header bg-primary text-white">
+    <h5 class="mb-0">Modifier l’Article</h5>
   </div>
-  <div class="mb-3">
-    <label class="form-label">Contenu</label>
-    <textarea name="content" class="form-control" rows="5" required>{{ .article.Content }}</textarea>
+  <div class="card-body">
+    {{ if .error }}
+      <div class="alert alert-danger">{{ .error }}</div>
+    {{ end }}
+    <form action="/articles/update/{{ .article.ID }}" method="post">
+      <div class="mb-3">
+        <label for="title" class="form-label">Titre</label>
+        <input id="title" type="text" name="title" class="form-control" value="{{ .article.Title }}" required>
+      </div>
+      <div class="mb-3">
+        <label for="content" class="form-label">Contenu</label>
+        <textarea id="content" name="content" class="form-control" rows="6" required>{{ .article.Content }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+      <a href="/" class="btn btn-secondary ms-2">Annuler</a>
+    </form>
   </div>
-  <button type="submit" class="btn btn-primary">Enregistrer</button>
-</form>
+</div>
 {{ end }}
