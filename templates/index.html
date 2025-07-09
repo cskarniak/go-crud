@@ -1,0 +1,22 @@
+{{ define "index" }}
+<h1>Liste des Articles</h1>
+<table class="table table-striped">
+  <thead>
+    <tr><th>#</th><th>Titre</th><th>Actions</th></tr>
+  </thead>
+  <tbody>
+    {{ range .articles }}
+    <tr>
+      <td>{{ .ID }}</td>
+      <td>{{ .Title }}</td>
+      <td>
+        <a class="btn btn-sm btn-primary" href="/articles/edit/{{ .ID }}">Éditer</a>
+        <form action="/articles/delete/{{ .ID }}" method="post" style="display:inline">
+          <button class="btn btn-sm btn-danger" type="submit">Supprimer</button>
+        </form>
+      </td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
+{{ end }}

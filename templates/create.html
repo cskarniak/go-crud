@@ -1,0 +1,17 @@
+{{ define "create" }}
+<h1>Nouvel Article</h1>
+{{ if .error }}
+  <div class="alert alert-danger">{{ .error }}</div>
+{{ end }}
+<form action="/articles" method="post">
+  <div class="mb-3">
+    <label class="form-label">Titre</label>
+    <input type="text" name="title" class="form-control" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Contenu</label>
+    <textarea name="content" class="form-control" rows="5" required></textarea>
+  </div>
+  <button type="submit" class="btn btn-success">Créer</button>
+</form>
+{{ end }}

@@ -1,0 +1,17 @@
+{{ define "edit" }}
+<h1>Modifier l'Article</h1>
+{{ if .error }}
+  <div class="alert alert-danger">{{ .error }}</div>
+{{ end }}
+<form action="/articles/update/{{ .article.ID }}" method="post">
+  <div class="mb-3">
+    <label class="form-label">Titre</label>
+    <input type="text" name="title" class="form-control" value="{{ .article.Title }}" required>
+  </div>
+  <div class="mb-3">
+    <label class="form-label">Contenu</label>
+    <textarea name="content" class="form-control" rows="5" required>{{ .article.Content }}</textarea>
+  </div>
+  <button type="submit" class="btn btn-primary">Enregistrer</button>
+</form>
+{{ end }}
