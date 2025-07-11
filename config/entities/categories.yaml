@@ -1,0 +1,45 @@
+# config/entities/categories.yaml
+
+entity:
+  name: "categorie"
+  table: "categories"
+  label: "Catégorie"
+  labelPlural: "Catégories"
+  defaultPageSize: 10
+
+fields:
+  - name: "id"
+    type: "uint"
+    label: "#"
+    readonly: true
+  - name: "libelle"
+    type: "string"
+    label: "Nom"
+    required: true
+  
+  # … ajoutez ici toutes les colonnes issues de votre schéma …
+
+forms:
+  - name: "categorieList"
+    type: "list"
+    entity: "categories"
+    config:
+      pageSize: 10   
+      defaultSortField: "id"
+      defaultSortOrder: "asc"
+      pageSizeOptions: [5,10,25,50]
+      columns: ["id","libelle"]
+      searchableFields: ["id","libelle"]
+      sortableFields: ["id","libelle"]
+
+  - name: "categorieFiche"
+    type: "fiche"
+    entity: "categories"
+    config:
+      groups:
+        - name: "Infos principales"
+          fields: ["id","libelle"]
+      labels:
+        submitCreate: "Créer la catégorie"
+        submitUpdate: "Enregistrer les changements"
+        cancel: "Annuler"

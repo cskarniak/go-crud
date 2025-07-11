@@ -36,3 +36,5 @@ require (
 	golang.org/x/text v0.20.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
+
+replace example.com/go-crud => ./

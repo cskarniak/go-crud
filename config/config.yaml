@@ -4,5 +4,22 @@ server:
   trusted_proxies:
     - "127.0.0.1"
 database:
-  path: "articles.db"
+  path: "app.db"
+
+# Chemin absolu vers le dossier contenant la base
+DATABASE_DIR: "/home/cs/development/go-crud/"
+
+# Nom du fichier SQLite
+DATABASE_NAME: "app.db"
+
+# Préfixe de l'API REST
+API_PREFIX: "/api/v1"
+
+# Pagination par défaut
+DEFAULT_PER_PAGE: 10
+
+# Clé secrète Flask (peut être surchargée via FLASK_SECRET_KEY)
+SECRET_KEY: "change-this-secret"
+
+
 
