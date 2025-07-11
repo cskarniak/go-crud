@@ -15,6 +15,8 @@ fields:
   - name: "libelle"
     type: "string"
     label: "Nom"
+  - name: "date_mise_a_jour"
+    type: "date"
     required: true
   
   # … ajoutez ici toutes les colonnes issues de votre schéma …
@@ -38,8 +40,8 @@ forms:
     config:
       groups:
         - name: "Infos principales"
-          fields: ["id","libelle"]
+          fields: ["id","libelle","date_mise_a_jour"]
       labels:
-        submitCreate: "Créer la catégorie"
-        submitUpdate: "Enregistrer les changements"
+        submitCreate: "Créer"
+        submitUpdate: "Enregistrer"
         cancel: "Annuler"

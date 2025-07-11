@@ -6,21 +6,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// EntityConfig représente la configuration d'une entité métier.
+// EntityConfig structure riche basée sur votre categories.yaml
 type EntityConfig struct {
 	Name             string
 	Table            string
 	Label            string
 	LabelPlural      string
 	DefaultPageSize  int
-	DefaultSortField string
-	DefaultSortOrder string
 	Fields           []Field
 	List             ListConfig
 	Fiche            FicheConfig
 }
 
-// Field décrit un champ d'une entité.
+// Field décrit un champ d'entité
 type Field struct {
 	Name     string
 	Label    string
@@ -29,8 +27,9 @@ type Field struct {
 	Required bool
 }
 
-// ListConfig contient la configuration pour la vue "list".
+// ListConfig configuration pour la liste
 type ListConfig struct {
+	Name             string
 	PageSize         int
 	DefaultSortField string
 	DefaultSortOrder string
@@ -40,19 +39,20 @@ type ListConfig struct {
 	SortableFields   []string
 }
 
-// FicheConfig contient la configuration pour la vue "fiche".
+// FicheConfig configuration pour la fiche
 type FicheConfig struct {
+	Name   string
 	Groups []Group
 	Labels map[string]string
 }
 
-// Group permet de regrouper plusieurs champs dans la fiche.
+// Group de champs dans la fiche
 type Group struct {
 	Name   string
 	Fields []string
 }
 
-// helper correspondant à la structure du YAML.
+// yamlEntity reflète votre YAML categories.yaml
 type yamlEntity struct {
 	Entity struct {
 		Name            string `yaml:"name"`
@@ -69,6 +69,7 @@ type yamlEntity struct {
 		Required bool   `yaml:"required,omitempty"`
 	} `yaml:"fields"`
 	Forms []struct {
+		Name   string `yaml:"name"`
 		Type   string `yaml:"type"`
 		Config struct {
 			PageSize         int               `yaml:"pageSize"`
@@ -84,7 +85,7 @@ type yamlEntity struct {
 	} `yaml:"forms"`
 }
 
-// LoadEntityConfig lit un fichier YAML et retourne la configuration de l'entité.
+// LoadEntityConfig parse le YAML et retourne une EntityConfig complète
 func LoadEntityConfig(path string) (*EntityConfig, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -96,7 +97,6 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 		return nil, fmt.Errorf("parsing YAML %s échoué: %w", path, err)
 	}
 
-	// Construire EntityConfig
 	ec := EntityConfig{
 		Name:            y.Entity.Name,
 		Table:           y.Entity.Table,
@@ -106,16 +106,16 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 		Fields:          make([]Field, len(y.Fields)),
 	}
 
-	// Copier les champs
 	for i, f := range y.Fields {
 		ec.Fields[i] = Field{f.Name, f.Label, f.Type, f.ReadOnly, f.Required}
 	}
 
-	// Parcourir les forms
+	// Initialiser List et Fiche
 	for _, form := range y.Forms {
 		switch form.Type {
 		case "list":
 			ec.List = ListConfig{
+				Name:             form.Name,
 				PageSize:         form.Config.PageSize,
 				DefaultSortField: form.Config.DefaultSortField,
 				DefaultSortOrder: form.Config.DefaultSortOrder,
@@ -126,18 +126,19 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 			}
 		case "fiche":
 			ec.Fiche = FicheConfig{
+				Name:   form.Name,
 				Groups: form.Config.Groups,
 				Labels: form.Config.Labels,
 			}
 		}
 	}
 
-	// Valeurs par défaut si nécessaire
+	// Valeurs par défaut
 	if ec.DefaultPageSize == 0 {
 		ec.DefaultPageSize = 10
 	}
 	if ec.List.DefaultSortField == "" {
-		ec.List.DefaultSortField = "id"
+		ec.List.DefaultSortField = ec.Fields[0].Name
 	}
 	if ec.List.DefaultSortOrder == "" {
 		ec.List.DefaultSortOrder = "asc"
