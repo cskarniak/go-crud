@@ -3,55 +3,72 @@
 <head>
   <meta charset="UTF-8">
   <title>
-    {{ if eq .Mode "new" }}Créer {{ .Entity.Label }}{{ else }}Modifier {{ .Entity.Label }}{{ end }}
+    {{ if eq .Mode "new" }}
+      {{ index .Entity.Fiche.Labels "titleCreate" }}
+    {{ else }}
+      {{ index .Entity.Fiche.Labels "titleUpdate" }}
+    {{ end }}
   </title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/css/form.css" rel="stylesheet">
 </head>
 <body>
-  <div class="container mt-4">
-    <h1 class="mb-4">
-      {{ if eq .Mode "new" }}Créer {{ .Entity.Label }}
-      {{ else }}Modifier {{ .Entity.Label }}
-      {{ end }}
-    </h1>
+  <!-- Suppression du <div class="container"> : on ne garde que la carte -->
+  <div class="card form-card shadow-sm mt-4">
+    <div class="card-header bg-primary text-white py-2">
+      <h5 class="mb-0 text-center">
+        {{ if eq .Mode "new" }}
+          {{ index .Entity.Fiche.Labels "titleCreate" }}
+        {{ else }}
+          {{ index .Entity.Fiche.Labels "titleUpdate" }}
+        {{ end }}
+      </h5>
+    </div>
+    <div class="card-body">
+      <form
+        method="post"
+        action="{{ if eq .Mode "new" }}
+                  /{{ .Entity.Fiche.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
+                {{ else }}
+                  /{{ .Entity.Fiche.Name }}/update/{{ index .DataRow "id" }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
+                {{ end }}"
+      >
+        {{ range .Entity.Fields }}
+          <div class="row mb-3 align-items-center">
+            <label for="{{ .Name }}" class="col-sm-3 col-form-label fw-bold">
+              {{ .Label }}
+            </label>
+            <div class="col-sm-9">
+              <input
+                type="{{ .Type }}"
+                class="form-control"
+                id="{{ .Name }}"
+                name="{{ .Name }}"
+                value="{{ index $.DataRow .Name }}"
+                {{ if .ReadOnly }}readonly{{ end }}
+                {{ if .Required }}required{{ end }}
+              />
+            </div>
+          </div>
+        {{ end }}
 
-    <form
-      method="post"
-      action="{{ if eq .Mode "new" }}/{{ .Entity.Fiche.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
-               {{ else }}/{{ .Entity.Fiche.Name }}/update/{{ index .DataRow "id" }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}{{ end }}"
-    >
-      {{ range .Entity.Fields }}
-        <div class="mb-3">
-          <label for="{{ .Name }}" class="form-label">{{ .Label }}</label>
-          <input
-            id="{{ .Name }}"
-            name="{{ .Name }}"
-            type="{{ .Type }}"
-            class="form-control"
-            value="{{ index $.DataRow .Name }}"
-            {{ if .ReadOnly }}readonly{{ end }}
-            {{ if .Required }}required{{ end }}
-          />
+        <div class="mt-4 text-end">
+          <button type="submit" class="btn btn-success">
+            {{ if eq .Mode "new" }}
+              {{ index .Entity.Fiche.Labels "submitCreate" }}
+            {{ else }}
+              {{ index .Entity.Fiche.Labels "submitUpdate" }}
+            {{ end }}
+          </button>
+          <a
+            href="/{{ .Entity.List.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}"
+            class="btn btn-secondary ms-2"
+          >
+            {{ index .Entity.Fiche.Labels "cancel" }}
+          </a>
         </div>
-      {{ end }}
-
-      <div class="mt-4">
-        <button type="submit" class="btn btn-success">
-          {{ if eq .Mode "new" }}
-            {{ index .Entity.Fiche.Labels "submitCreate" }}
-          {{ else }}
-            {{ index .Entity.Fiche.Labels "submitUpdate" }}
-          {{ end }}
-        </button>
-        <a
-          href="/{{ .Entity.List.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}"
-          class="btn btn-secondary ms-2"
-        >
-          {{ index .Entity.Fiche.Labels "cancel" }}
-        </a>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
 </body>
 </html>

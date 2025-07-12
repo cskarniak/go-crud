@@ -65,3 +65,9 @@ form .invalid-feedback {
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
+/* Contrôle de la largeur de la fiche */
+.form-card {
+  max-width: 600px;    /* Ajustez la largeur souhaitée */
+  margin: 2rem auto;   /* Centré horizontalement + espace vertical */
+}
+

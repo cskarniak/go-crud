@@ -10,13 +10,14 @@ entity:
 fields:
   - name: "id"
     type: "uint"
-    label: "#"
+    label: "id"
     readonly: true
   - name: "libelle"
     type: "string"
-    label: "Nom"
+    label: "Labellé"
   - name: "date_mise_a_jour"
     type: "date"
+    label:  "Date MAJ"
     required: true
   
   # … ajoutez ici toutes les colonnes issues de votre schéma …
@@ -42,6 +43,8 @@ forms:
         - name: "Infos principales"
           fields: ["id","libelle","date_mise_a_jour"]
       labels:
+        titleCreate: "Création d’une catégorie"
+        titleUpdate: "Édition d’une catégorie"
         submitCreate: "Créer"
         submitUpdate: "Enregistrer"
         cancel: "Annuler"

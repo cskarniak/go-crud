@@ -1,93 +1,38 @@
-/* assets/css/list.css */
-
-/* -------- Conteneur responsive -------- */
-.table-responsive {
-  margin-bottom: 1.5rem;
-  overflow-x: auto;
+/* Wrapper de la carte pour définir largeur max et centrage */
+.list-card {
+  max-width: 1200px;  /* ou la largeur souhaitée */
+  margin: 0 auto;
 }
 
-/* -------- Style général du tableau -------- */
-.table {
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  border-radius: 0.5rem;
-  overflow: hidden;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  background-color: #fff;
+/* Barre d’outils : espacement et alignement */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+.toolbar .ms-auto {
+  margin-left: auto;
 }
 
-/* -------- En-tête -------- */
-.table thead {
-  background-color: #f8f9fa;
+/* Zebra pastel en tons de bleu Bootstrap */
+.table-striped > tbody > tr:nth-of-type(odd) > td {
+  background-color: var(--bs-primary-bg-subtle) !important; /* #cfe2ff */
 }
-.table thead th {
-  color: #495057;
-  font-weight: 600;
-  border: none;
-  padding: 0.75rem 1rem;
-  text-transform: uppercase;
-  font-size: 0.875rem;
+.table-striped > tbody > tr:nth-of-type(even) > td {
+  background-color: #ffffff !important;
 }
 
-/* -------- Zebra striping – surcharge Bootstrap -------- */
-/* Ce sélecteur reproduit la cible de Bootstrap et y ajoute !important */
-table.table-hover.table-striped > tbody > tr:nth-of-type(odd) > td {
-  background-color: #ffffff !important;  /* lignes impaires */
-  color: #212529        !important;
-}
-table.table-hover.table-striped > tbody > tr:nth-of-type(even) > td {
-  background-color: #bfcfe7 !important;  /* lignes paires */
-  color: #212529       !important;
+/* En-tête du tableau : texte en bleu foncé et légère bordure en bas */
+.table-light th {
+  color: var(--bs-blue);
+  border-bottom: 2px solid var(--bs-blue);
 }
 
-/* -------- Hover (au-dessus du zebra) -------- */
-table.table-hover.table-striped > tbody > tr:hover > td {
-  background-color: #dbe7f4 !important;
-  transform: translateY(-1px);
-  transition: background-color 0.2s ease, transform 0.1s ease;
-}
-
-/* -------- Cellules -------- */
-.table td {
-  vertical-align: middle;
-  padding: 0.75rem 1rem;
-  border-bottom: 1px solid #e9ecef;
-}
-
-/* -------- Boutons d’action -------- */
-.table tbody .btn {
-  margin-right: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.85rem;
-}
-
-/* -------- Pagination -------- */
-.pagination {
-  justify-content: center;
-  margin-top: 1.5rem;
-}
-.pagination .page-item .page-link {
-  border-radius: 0.25rem;
-  padding: 0.5rem 0.75rem;
-  color: #007bff;
-}
-.pagination .page-item.active .page-link {
-  background-color: #007bff;
-  border-color: #007bff;
-  color: #fff;
-}
-.pagination .page-item.disabled .page-link {
-  color: #6c757d;
-}
-
-/* -------- Affichage mobile -------- */
+/* Rendu responsive : labels en mobile */
 @media (max-width: 576px) {
   .table thead { display: none; }
-  .table tbody tr {
-    display: block;
-    margin-bottom: 1rem;
-  }
+  .table tbody tr { display: block; margin-bottom: 1rem; }
   .table tbody td {
     display: flex;
     justify-content: space-between;
@@ -101,31 +46,30 @@ table.table-hover.table-striped > tbody > tr:hover > td {
     color: #6c757d;
   }
 }
-
 /* Contrôle hauteur de ligne
 
 /* 1) On force le box‐sizing border‐box pour que padding/border soient inclus dans height */
 .table,
 .table th,
 .table td {
-  box-sizing: border-box;
+box-sizing: border-box;
 }
 
 /* 2) On fixe la hauteur des cellules ET on réduit la padding */
 .table tbody tr > th,
 .table tbody tr > td {
-  height: 30px     !important; /* hauteur désirée */
-  padding: 0.2rem  !important; /* réduit la padding top/bottom à 0.5rem */
-  overflow: hidden;
+height: 25px !important; /* hauteur désirée */
+padding: 0.2rem !important; /* réduit la padding top/bottom à 0.5rem */
+overflow: hidden;
 }
 
 /* 3) Ajustement des boutons pour qu’ils remplissent bien cette hauteur */
 .table tbody .btn,
 .table tbody .btn-sm {
-  height: 2rem      !important; /* ou égale à 60px - padding */
-  line-height: 2rem !important; /* pour centrer verticalement le texte */
-  padding: 0 0.75rem !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+height: 1.5rem !important; /* ou égale à 60px - padding */
+line-height: 2rem !important; /* pour centrer verticalement le texte */
+padding: 0 0.75rem !important;
+display: inline-flex;
+align-items: center;
+justify-content: center;
 }
