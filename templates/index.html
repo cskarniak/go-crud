@@ -11,19 +11,16 @@
 <body>
   <div class="container-fluid mt-4">
     <div class="card list-card shadow-sm mx-auto">
-      <!-- En-tête plein largeur -->
       <div class="card-header bg-primary text-white">
         <h2 class="mb-0">{{ .Entity.LabelPlural }}</h2>
       </div>
       <div class="card-body">
 
-        <!-- Barre d’outils + recherche -->
+        <!-- Barre d’outils avec recherche -->
         <form method="get" class="d-flex flex-wrap align-items-center gap-2 mb-3">
           <button type="button" class="btn btn-secondary">Menu</button>
           <a href="/{{ .Entity.Fiche.Name }}/new?page=1&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}"
-             class="btn btn-success">
-            Nouveau
-          </a>
+             class="btn btn-success">Nouveau</a>
 
           <div class="ms-auto d-flex align-items-center gap-2">
             <label class="mb-0">Afficher</label>
@@ -38,7 +35,7 @@
               {{ end }}
             </select>
 
-            <!-- Conserver le tri lors de la recherche -->
+            <!-- Conserver tri et recherche -->
             <input type="hidden" name="sort"  value="{{ .SortField }}">
             <input type="hidden" name="order" value="{{ .SortOrder }}">
 
@@ -49,11 +46,8 @@
                    value="{{ .Search }}"
                    style="width:200px;">
             <button type="submit" class="btn btn-primary btn-sm">Go</button>
-
             <a href="?page=1&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}"
-               class="btn btn-outline-secondary btn-sm">
-              Clear
-            </a>
+               class="btn btn-outline-secondary btn-sm">Clear</a>
           </div>
         </form>
 
@@ -63,7 +57,22 @@
             <thead class="table-light">
               <tr>
                 {{ range .Columns }}
-                  <th scope="col">{{ . }}</th>
+                  {{ $col := . }}
+                  <th scope="col">
+                    <a
+                      href="?page=1&pageSize={{$.PageSize}}&search={{$.Search}}&sort={{$col}}&order={{if eq $.SortField $col}}{{if eq $.SortOrder "asc"}}desc{{else}}asc{{end}}{{else}}asc{{end}}"
+                      class="link-dark text-decoration-none"
+                    >
+                      {{ $col }}
+                      {{ if eq $.SortField $col }}
+                        {{ if eq $.SortOrder "asc" }}
+                          ▲
+                        {{ else }}
+                          ▼
+                        {{ end }}
+                      {{ end }}
+                    </a>
+                  </th>
                 {{ end }}
                 <th scope="col">Actions</th>
               </tr>
@@ -77,10 +86,10 @@
                     <td data-label="{{ . }}">{{ index $row . }}</td>
                   {{ end }}
                   <td>
-                    <a href="/{{ $.Entity.Fiche.Name }}/edit/{{ $id }}?page={{$.Page}}&pageSize={{$.PageSize}}&sort={{$.SortField}}&order={{$.SortOrder}}"
+                    <a href="/{{ $.Entity.Fiche.Name }}/edit/{{ $id }}?page={{$.Page}}&pageSize={{$.PageSize}}&sort={{$.SortField}}&order={{$.SortOrder}}&search={{$.Search}}"
                        class="btn btn-sm btn-primary me-1">Éditer</a>
                     <form method="post"
-                          action="/{{ $.Entity.Fiche.Name }}/delete/{{ $id }}?page={{$.Page}}&pageSize={{$.PageSize}}&sort={{$.SortField}}&order={{$.SortOrder}}"
+                          action="/{{ $.Entity.Fiche.Name }}/delete/{{ $id }}?page={{$.Page}}&pageSize={{$.PageSize}}&sort={{$.SortField}}&order={{$.SortOrder}}&search={{$.Search}}"
                           style="display:inline-block">
                       <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
                     </form>
