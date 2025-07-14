@@ -1,35 +1,127 @@
-/* Wrapper de la carte pour définir largeur max et centrage */
+/* assets/css/list.css */
+
+/* -------- Carte de la liste (largeur et centrage) -------- */
 .list-card {
-  max-width: 1200px;  /* ou la largeur souhaitée */
-  margin: 0 auto;
+  width: 50%;           /* ajustez ici la largeur globale */
+  max-width: 1200px;    /* plafond facultatif */
+  margin: 2rem auto;    /* centré horizontalement + marge verticale */
+  overflow-x: auto;     /* scroll si un contenu déborde */
 }
 
-/* Barre d’outils : espacement et alignement */
+/* -------- Barre d’outils -------- */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
-}
-.toolbar .ms-auto {
-  margin-left: auto;
+  min-width: 0;         /* permet aux items de rétrécir */
 }
 
-/* Zebra pastel en tons de bleu Bootstrap */
+/* -------- Table fixe -------- */
+.table-fixed {
+  table-layout: fixed;
+  width: 100%;          /* occupe tout l’espace de .list-card */
+}
+.table-fixed th,
+.table-fixed td {
+  overflow: hidden;         /* ne déborde pas */
+  text-overflow: ellipsis;  /* tronque avec “…” */
+  white-space: nowrap;      /* empêche le retour à la ligne */
+}
+
+/* -------- Largeurs de colonnes -------- */
+.table-fixed th:nth-child(1),
+.table-fixed td:nth-child(1) { width: 50px; }
+.table-fixed th:nth-child(2),
+.table-fixed td:nth-child(2) { width: 150px; }
+.table-fixed th:nth-child(3),
+.table-fixed td:nth-child(3) { width: 100px; }
+/* Les autres colonnes se partagent le reste de l’espace */
+
+/* -------- Conteneur responsive du tableau -------- */
+.table-responsive {
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+}
+
+/* -------- Style général du tableau -------- */
+.table {
+  border-collapse: separate;
+  border-spacing: 0;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  background-color: #fff;
+}
+.table thead {
+  background-color: #f8f9fa;
+}
+.table thead th {
+  color: #495057;
+  font-weight: 600;
+  padding: 0.75rem 1rem;
+  text-transform: uppercase;
+  font-size: 0.875rem;
+  border: none;
+}
+.table td {
+  vertical-align: middle;
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+.table tbody .btn {
+  margin-right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+}
+
+/* -------- Zebra striping -------- */
 .table-striped > tbody > tr:nth-of-type(odd) > td {
-  background-color: var(--bs-primary-bg-subtle) !important; /* #cfe2ff */
+  background-color: var(--bs-primary-bg-subtle) !important;
+  color: var(--bs-blue-text-color)    !important;
 }
 .table-striped > tbody > tr:nth-of-type(even) > td {
   background-color: #ffffff !important;
+  color: #000     !important;
 }
 
-/* En-tête du tableau : texte en bleu foncé et légère bordure en bas */
-.table-light th {
-  color: var(--bs-blue);
-  border-bottom: 2px solid var(--bs-blue);
+/* -------- Hover -------- */
+.table-hover > tbody > tr:hover > td {
+  background-color: #d0eaff !important;
 }
 
-/* Rendu responsive : labels en mobile */
+/* -------- Bordures verticales -------- */
+.table-bordered {
+  border-collapse: collapse !important;
+}
+.table-bordered > thead > tr > th,
+.table-bordered > tbody > tr > td {
+  border: 1px solid #b3bac0 !important;
+}
+.table-bordered > thead > tr > th:last-child,
+.table-bordered > tbody > tr > td:last-child {
+  border-right: 1px solid #b3bac0 !important;
+}
+
+/* -------- Pagination -------- */
+.pagination {
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+.pagination .page-item .page-link {
+  border-radius: 0.25rem;
+  padding: 0.5rem 0.75rem;
+  color: #007bff;
+}
+.pagination .page-item.active .page-link {
+  background-color: #007bff;
+  border-color: #007bff;
+  color: #fff;
+}
+.pagination .page-item.disabled .page-link {
+  color: #6c757d;
+}
+
+/* -------- Affichage mobile -------- */
 @media (max-width: 576px) {
   .table thead { display: none; }
   .table tbody tr { display: block; margin-bottom: 1rem; }
@@ -46,30 +138,25 @@
     color: #6c757d;
   }
 }
-/* Contrôle hauteur de ligne
 
-/* 1) On force le box‐sizing border‐box pour que padding/border soient inclus dans height */
+/* -------- Contrôle hauteur de ligne -------- */
 .table,
 .table th,
 .table td {
-box-sizing: border-box;
+  box-sizing: border-box;
 }
-
-/* 2) On fixe la hauteur des cellules ET on réduit la padding */
 .table tbody tr > th,
 .table tbody tr > td {
-height: 25px !important; /* hauteur désirée */
-padding: 0.2rem !important; /* réduit la padding top/bottom à 0.5rem */
-overflow: hidden;
+  height: 25px     !important; /* hauteur désirée */
+  padding: 0.2rem  !important; /* réduit la padding */
+  overflow: hidden;
 }
-
-/* 3) Ajustement des boutons pour qu’ils remplissent bien cette hauteur */
 .table tbody .btn,
 .table tbody .btn-sm {
-height: 1.5rem !important; /* ou égale à 60px - padding */
-line-height: 2rem !important; /* pour centrer verticalement le texte */
-padding: 0 0.75rem !important;
-display: inline-flex;
-align-items: center;
-justify-content: center;
+  height: 1.5rem      !important;
+  line-height: 2rem   !important;
+  padding: 0 0.75rem  !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
