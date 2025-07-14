@@ -3,6 +3,7 @@ package crud
 import (
     "net/http"
     "strconv"
+    "strings"
     "time"
 
     "github.com/gin-gonic/gin"
@@ -13,11 +14,11 @@ import (
 
 // RegisterEntity génère les routes CRUD pour une entité donnée.
 func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
-    listPrefix   := "/" + ec.List.Name    // ex: /categorieList
-    entityPrefix := "/" + ec.Name         // ex: /categorie
-    fichePrefix  := "/" + ec.Fiche.Name   // ex: /categorieFiche
+    listPrefix   := "/" + ec.List.Name
+    entityPrefix := "/" + ec.Name
+    fichePrefix  := "/" + ec.Fiche.Name
 
-    // --- 1) LIST via /<formListName> ---
+    // 1) LIST avec pagination, tri et recherche
     r.GET(listPrefix, func(c *gin.Context) {
         page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
         pageSize := ec.List.PageSize
@@ -31,8 +32,8 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         if sortField == "" {
             sortField = ec.List.DefaultSortField
         }
-        if sortField == "" && len(ec.Fields) > 0 {
-            sortField = ec.Fields[0].Name
+        if sortField == "" && len(ec.List.SortableFields) > 0 {
+            sortField = ec.List.SortableFields[0]
         }
         sortOrder := c.Query("order")
         if sortOrder == "" {
@@ -42,36 +43,56 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             sortOrder = "asc"
         }
 
+        search := strings.TrimSpace(c.Query("search"))
+
+        // Construction de la requête
+        query := db.Table(ec.Table)
+        countQ := db.Table(ec.Table)
+        if search != "" && len(ec.List.SearchableFields) > 0 {
+            var conds []string
+            var args  []interface{}
+            for _, f := range ec.List.SearchableFields {
+                conds = append(conds, f+" LIKE ?")
+                args  = append(args, "%"+search+"%")
+            }
+            where := strings.Join(conds, " OR ")
+            query = query.Where(where, args...)
+            countQ = countQ.Where(where, args...)
+        }
+
+        // Récupération des données
         var data []map[string]interface{}
-        db.Table(ec.Table).
-            Order(sortField + " " + sortOrder).
+        query.Order(sortField + " " + sortOrder).
             Offset((page-1)*pageSize).
             Limit(pageSize).
             Find(&data)
 
+        // Comptage pour pagination
         var total int64
-        db.Table(ec.Table).Count(&total)
+        countQ.Count(&total)
         totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
 
         c.HTML(http.StatusOK, "index.html", gin.H{
-            "Entity":     ec,
-            "Columns":    ec.List.Columns,
-            "Data":       data,
-            "Page":       page,
-            "PageSize":   pageSize,
-            "SortField":  sortField,
-            "SortOrder":  sortOrder,
-            "Total":      total,
-            "TotalPages": totalPages,
+            "Entity":          ec,
+            "Columns":         ec.List.Columns,
+            "Data":            data,
+            "Page":            page,
+            "PageSize":        pageSize,
+            "PageSizeOptions": ec.List.PageSizeOptions,
+            "SortField":       sortField,
+            "SortOrder":       sortOrder,
+            "Search":          search,
+            "Total":           total,
+            "TotalPages":      totalPages,
         })
     })
 
-    // --- 2) Alias : /<entityName> redirige vers la liste ---
+    // 2) Alias /<entity> → liste
     r.GET(entityPrefix, func(c *gin.Context) {
         c.Redirect(http.StatusSeeOther, listPrefix+"?"+c.Request.URL.RawQuery)
     })
 
-    // --- 3) NEW ---
+    // 3) NEW
     r.GET(fichePrefix+"/new", func(c *gin.Context) {
         c.HTML(http.StatusOK, "form.html", gin.H{
             "Entity":    ec,
@@ -84,7 +105,7 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         })
     })
 
-    // --- 4) CREATE ---
+    // 4) CREATE
     r.POST(fichePrefix, func(c *gin.Context) {
         vals := map[string]interface{}{}
         for _, f := range ec.Fields {
@@ -114,7 +135,7 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         c.Redirect(http.StatusSeeOther, listPrefix)
     })
 
-    // --- 5) EDIT ---
+    // 5) EDIT avec formatage des dates
     r.GET(fichePrefix+"/edit/:id", func(c *gin.Context) {
         id := c.Param("id")
         var dataRow map[string]interface{}
@@ -124,8 +145,6 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             c.String(http.StatusNotFound, "Enregistrement non trouvé")
             return
         }
-
-        // Formater les champs de type date pour préremplir le form
         for _, f := range ec.Fields {
             if f.Type == "date" {
                 if raw, ok := dataRow[f.Name]; ok && raw != nil {
@@ -138,7 +157,6 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
                 }
             }
         }
-
         c.HTML(http.StatusOK, "form.html", gin.H{
             "Entity":    ec,
             "Mode":      "edit",
@@ -150,7 +168,7 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         })
     })
 
-    // --- 6) UPDATE ---
+    // 6) UPDATE
     r.POST(fichePrefix+"/update/:id", func(c *gin.Context) {
         id := c.Param("id")
         updates := map[string]interface{}{}
@@ -180,23 +198,19 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             c.String(http.StatusBadRequest, "Erreur de mise à jour : %v", err)
             return
         }
-
-        // Conserver le contexte de pagination/tri
-        page := c.Query("page")
-        pageSize := c.Query("pageSize")
-        sort := c.Query("sort")
-        order := c.Query("order")
-        redirectURL := listPrefix +
-            "?page=" + page +
-            "&pageSize=" + pageSize +
-            "&sort=" + sort +
-            "&order=" + order
-        c.Redirect(http.StatusSeeOther, redirectURL)
+        redirect := listPrefix +
+            "?page=" + c.Query("page") +
+            "&pageSize=" + c.Query("pageSize") +
+            "&sort=" + c.Query("sort") +
+            "&order=" + c.Query("order")
+        c.Redirect(http.StatusSeeOther, redirect)
     })
 
-    // --- 7) DELETE ---
+    // 7) DELETE
     r.POST(fichePrefix+"/delete/:id", func(c *gin.Context) {
-        db.Table(ec.Table).Where("id = ?", c.Param("id")).Delete(nil)
+        db.Table(ec.Table).
+            Where("id = ?", c.Param("id")).
+            Delete(nil)
         c.Redirect(http.StatusSeeOther, listPrefix)
     })
 }
