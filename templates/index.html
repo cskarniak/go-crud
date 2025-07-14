@@ -1,4 +1,3 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -11,7 +10,6 @@
 </head>
 <body>
 
-  <!-- Wrapper qui règle la largeur et le centrage -->
   <div class="list-card">
     <div class="card shadow-sm">
       <div class="card-header bg-primary text-white">
@@ -24,9 +22,7 @@
           <button type="button" class="btn btn-secondary">Menu</button>
           <a
             href="/{{ .Entity.Fiche.Name }}/new?page=1&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}"
-            class="btn btn-success">
-            Nouveau
-          </a>
+            class="btn btn-success">Nouveau</a>
 
           <div class="ms-auto d-flex align-items-center gap-2">
             <label class="mb-0">Afficher</label>
@@ -36,13 +32,10 @@
               style="width:auto"
               onchange="this.form.submit()">
               {{ range .PageSizeOptions }}
-                <option value="{{ . }}"{{ if eq $.PageSize . }} selected{{ end }}>
-                  {{ . }}
-                </option>
+                <option value="{{ . }}"{{ if eq $.PageSize . }} selected{{ end }}>{{ . }}</option>
               {{ end }}
             </select>
 
-            <!-- Conserver tri et recherche -->
             <input type="hidden" name="sort"  value="{{ .SortField }}">
             <input type="hidden" name="order" value="{{ .SortOrder }}">
 
@@ -56,9 +49,7 @@
             <button type="submit" class="btn btn-primary btn-sm">Go</button>
             <a
               href="?page=1&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}"
-              class="btn btn-outline-secondary btn-sm">
-              Clear
-            </a>
+              class="btn btn-outline-secondary btn-sm">Clear</a>
           </div>
         </form>
 
@@ -72,7 +63,7 @@
                   {{ $col := . }}
                   <th scope="col">
                     <a
-                      href="?page=1&pageSize={{ $.PageSize }}&search={{ $.Search }}&sort={{ $col }}&order={{ if eq $.SortField $col }}{{ if eq $.SortOrder "asc" }}desc{{ else }}asc{{ end }}{{ else }}asc{{ end }}"
+                      href="?page=1&pageSize={{ $.PageSize }}&search={{ $.Search }}&sort={{ $col }}&order={{ if and (eq $.SortField $col) (eq $.SortOrder "asc") }}desc{{ else if eq $.SortField $col }}asc{{ else }}asc{{ end }}"
                       class="link-dark text-decoration-none">
                       {{ $col }}
                       {{ if eq $.SortField $col }}
@@ -87,24 +78,19 @@
             <tbody>
               {{ range .Data }}
                 {{ $row := . }}
-                {{ $id  := index $row "id" }}
-                <tr>
+                <tr {{ if index $row "_highlight" }}class="highlight-row"{{ end }}>
                   {{ range $.Columns }}
                     <td data-label="{{ . }}">{{ index $row . }}</td>
                   {{ end }}
                   <td>
                     <a
-                      href="/{{ $.Entity.Fiche.Name }}/edit/{{ $id }}?page={{ $.Page }}&pageSize={{ .PageSize }}&sort={{ $.SortField }}&order={{ .SortOrder }}&search={{ .Search}}"
-                      class="btn btn-sm btn-primary me-1">
-                      Éditer
-                    </a>
+                      href="/{{ $.Entity.Fiche.Name }}/edit/{{ index $row "id" }}?page={{ $.Page }}&pageSize={{ $.PageSize }}&sort={{ $.SortField }}&order={{ $.SortOrder }}&search={{ $.Search }}"
+                      class="btn btn-sm btn-primary me-1">Éditer</a>
                     <form
                       method="post"
-                      action="/{{ $.Entity.Fiche.Name }}/delete/{{ $id }}?page={{ $.Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}&search={{ .Search}}"
+                      action="/{{ $.Entity.Fiche.Name }}/delete/{{ index $row "id" }}?page={{ $.Page }}&pageSize={{ $.PageSize }}&sort={{ $.SortField }}&order={{ $.SortOrder }}&search={{ $.Search }}"
                       style="display:inline-block">
-                      <button type="submit" class="btn btn-sm btn-danger">
-                        Supprimer
-                      </button>
+                      <button type="submit" class="btn btn-sm btn-danger">Supprimer</button>
                     </form>
                   </td>
                 </tr>
