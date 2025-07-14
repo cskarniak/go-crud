@@ -71,3 +71,15 @@ form .invalid-feedback {
   margin: 2rem auto;   /* Centré horizontalement + espace vertical */
 }
 
+/* Zone d’erreurs en fond pastel (modifiable) */
+.error-zone {
+  background-color: #f8d7da;   /* pastel rouge clair */
+  color: #842029;              /* texte plus sombre */
+  border: 1px solid #f5c2c7;   /* bordure assortie */
+  border-radius: 0.25rem;
+  padding: 0.75rem 1rem;
+}
+.error-zone ul {
+  margin: 0;
+  padding-left: 1.25rem; /* indent des li */
+}

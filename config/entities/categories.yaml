@@ -15,7 +15,7 @@ fields:
   - name: "libelle"
     type: "string"
     label: "Labellé"
-  - name: "date_mise_a_jour"
+  - name: "date_maj"
     type: "date"
     label:  "Date MAJ"
     required: true
@@ -41,7 +41,7 @@ forms:
     config:
       groups:
         - name: "Infos principales"
-          fields: ["id","libelle","date_mise_a_jour"]
+          fields: ["id","libelle","date_maj"]
       labels:
         titleCreate: "Création d’une catégorie"
         titleUpdate: "Édition d’une catégorie"

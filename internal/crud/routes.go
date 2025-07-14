@@ -15,15 +15,15 @@ import (
 )
 
 // RegisterEntity génère les routes CRUD pour une entité donnée,
-// avec prise en charge de la mise en évidence d’un enregistrement créé ou édité.
+// avec pagination, tri, recherche, pré-remplissage, validations front/back,
+// highlight et affichage inline des erreurs.
 func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
-    listPrefix   := "/" + ec.List.Name    // ex: /categorieList
-    entityPrefix := "/" + ec.Name         // ex: /categorie
-    fichePrefix  := "/" + ec.Fiche.Name   // ex: /categorieFiche
+    listPrefix   := "/" + ec.List.Name
+    entityPrefix := "/" + ec.Name
+    fichePrefix  := "/" + ec.Fiche.Name
 
-    // --- LIST (GET) avec pagination, tri, recherche et highlight ---
+    // --- LIST (GET) ---
     r.GET(listPrefix, func(c *gin.Context) {
-        // Pagination
         page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
         pageSize := ec.List.PageSize
         if ps := c.Query("pageSize"); ps != "" {
@@ -32,29 +32,18 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             }
         }
 
-        // Tri
         sortField := c.Query("sort")
         if sortField == "" {
             sortField = ec.List.DefaultSortField
-        }
-        if sortField == "" && len(ec.List.SortableFields) > 0 {
-            sortField = ec.List.SortableFields[0]
         }
         sortOrder := c.Query("order")
         if sortOrder == "" {
             sortOrder = ec.List.DefaultSortOrder
         }
-        if sortOrder == "" {
-            sortOrder = "asc"
-        }
 
-        // Recherche
         search := strings.TrimSpace(c.Query("search"))
-
-        // Highlight ID (paramètre facultatif)
         highlightID, _ := strconv.Atoi(c.Query("highlight"))
 
-        // Construction de la requête principale et du comptage
         query := db.Table(ec.Table)
         countQ := db.Table(ec.Table)
         if search != "" && len(ec.List.SearchableFields) > 0 {
@@ -69,7 +58,6 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             countQ = countQ.Where(where, args...)
         }
 
-        // Récupération des données paginées
         var data []map[string]interface{}
         query.
             Order(sortField + " " + sortOrder).
@@ -77,22 +65,18 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             Limit(pageSize).
             Find(&data)
 
-        // Marquer la ligne à surligner
         for _, row := range data {
             if idVal, ok := row["id"]; ok {
-                idStr := fmt.Sprintf("%v", idVal)
-                if idInt, err := strconv.Atoi(idStr); err == nil && idInt == highlightID {
+                if idInt, err := strconv.Atoi(fmt.Sprintf("%v", idVal)); err == nil && idInt == highlightID {
                     row["_highlight"] = true
                 }
             }
         }
 
-        // Comptage total pour pagination
         var total int64
         countQ.Count(&total)
         totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
 
-        // Rendu du template
         c.HTML(http.StatusOK, "index.html", gin.H{
             "Entity":          ec,
             "Columns":         ec.List.Columns,
@@ -108,17 +92,27 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         })
     })
 
-    // --- Alias : /<entity> → liste ---
+    // --- ALIAS /<entity> → liste ---
     r.GET(entityPrefix, func(c *gin.Context) {
         c.Redirect(http.StatusSeeOther, listPrefix+"?"+c.Request.URL.RawQuery)
     })
 
-    // --- NEW (GET formulaire vide) ---
+    // --- NEW (GET) avec pré-remplissage front ---
     r.GET(fichePrefix+"/new", func(c *gin.Context) {
+        dataRow := map[string]interface{}{}
+        if ec.Code != nil {
+            for field, spec := range ec.Code.Prepopulate {
+                if spec.Type == "now" {
+                    dataRow[field] = time.Now().Format(spec.Format)
+                }
+            }
+        }
         c.HTML(http.StatusOK, "form.html", gin.H{
             "Entity":    ec,
+            "Code":      ec.Code,
             "Mode":      "new",
-            "DataRow":   map[string]interface{}{},
+            "DataRow":   dataRow,
+            "Errors":    nil,
             "Page":      c.Query("page"),
             "PageSize":  c.Query("pageSize"),
             "SortField": c.Query("sort"),
@@ -126,8 +120,57 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         })
     })
 
-    // --- CREATE (POST) ---
+    // --- CREATE (POST) avec validation back et affichage inline des erreurs ---
     r.POST(fichePrefix, func(c *gin.Context) {
+        errors := map[string]string{}
+        if ec.Code != nil {
+            for field, rule := range ec.Code.BackValidations {
+                raw, exists := c.GetPostForm(field)
+                if !exists {
+                    continue
+                }
+                if rule.Required && raw == "" {
+                    if rule.RequiredMessage != "" {
+                        errors[field] = rule.RequiredMessage
+                    } else {
+                        errors[field] = fmt.Sprintf("%s est obligatoire", field)
+                    }
+                }
+                if rule.Min > 0 && len(raw) < rule.Min {
+                    if rule.MinMessage != "" {
+                        errors[field] = rule.MinMessage
+                    } else {
+                        errors[field] = fmt.Sprintf("%s doit faire au moins %d caractères", field, rule.Min)
+                    }
+                }
+                if rule.Max > 0 && len(raw) > rule.Max {
+                    if rule.MaxMessage != "" {
+                        errors[field] = rule.MaxMessage
+                    } else {
+                        errors[field] = fmt.Sprintf("%s ne doit pas dépasser %d caractères", field, rule.Max)
+                    }
+                }
+            }
+        }
+        if len(errors) > 0 {
+            dataRow := map[string]interface{}{}
+            for _, f := range ec.Fields {
+                dataRow[f.Name] = c.PostForm(f.Name)
+            }
+            c.HTML(http.StatusBadRequest, "form.html", gin.H{
+                "Entity":    ec,
+                "Code":      ec.Code,
+                "Mode":      "new",
+                "DataRow":   dataRow,
+                "Errors":    errors,
+                "Page":      c.Query("page"),
+                "PageSize":  c.Query("pageSize"),
+                "SortField": c.Query("sort"),
+                "SortOrder": c.Query("order"),
+            })
+            return
+        }
+
         vals := map[string]interface{}{}
         for _, f := range ec.Fields {
             if f.ReadOnly {
@@ -154,22 +197,18 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             return
         }
 
-        // Récupérer le nouvel ID
         var newID int
         db.Table(ec.Table).
             Select("id").
             Order("id DESC").
             Limit(1).
             Scan(&newID)
-
-        // Calculer la page du nouvel enregistrement
         var countBefore int64
         db.Table(ec.Table).
             Where("id <= ?", newID).
             Count(&countBefore)
         page := int((countBefore + int64(ec.List.PageSize) - 1) / int64(ec.List.PageSize))
 
-        // Rediriger vers la page avec highlight
         redirectURL := fmt.Sprintf(
             "%s?page=%d&pageSize=%d&sort=%s&order=%s&highlight=%d",
             listPrefix, page, ec.List.PageSize, ec.List.DefaultSortField, ec.List.DefaultSortOrder, newID,
@@ -177,7 +216,7 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         c.Redirect(http.StatusSeeOther, redirectURL)
     })
 
-    // --- EDIT (GET pré-remplit form) ---
+    // --- EDIT (GET) ---
     r.GET(fichePrefix+"/edit/:id", func(c *gin.Context) {
         id := c.Param("id")
         var dataRow map[string]interface{}
@@ -187,7 +226,6 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             c.String(http.StatusNotFound, "Enregistrement non trouvé")
             return
         }
-        // Formater les champs date
         for _, f := range ec.Fields {
             if f.Type == "date" {
                 if raw, ok := dataRow[f.Name]; ok && raw != nil {
@@ -202,8 +240,10 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         }
         c.HTML(http.StatusOK, "form.html", gin.H{
             "Entity":    ec,
+            "Code":      ec.Code,
             "Mode":      "edit",
             "DataRow":   dataRow,
+            "Errors":    nil,
             "Page":      c.Query("page"),
             "PageSize":  c.Query("pageSize"),
             "SortField": c.Query("sort"),
@@ -211,9 +251,59 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         })
     })
 
-    // --- UPDATE (POST) ---
+    // --- UPDATE (POST) avec validation back et erreurs inline ---
     r.POST(fichePrefix+"/update/:id", func(c *gin.Context) {
         id := c.Param("id")
+        errors := map[string]string{}
+        if ec.Code != nil {
+            for field, rule := range ec.Code.BackValidations {
+                raw, exists := c.GetPostForm(field)
+                if !exists {
+                    continue
+                }
+                if rule.Required && raw == "" {
+                    if rule.RequiredMessage != "" {
+                        errors[field] = rule.RequiredMessage
+                    } else {
+                        errors[field] = fmt.Sprintf("%s est obligatoire", field)
+                    }
+                }
+                if rule.Min > 0 && len(raw) < rule.Min {
+                    if rule.MinMessage != "" {
+                        errors[field] = rule.MinMessage
+                    } else {
+                        errors[field] = fmt.Sprintf("%s doit faire au moins %d caractères", field, rule.Min)
+                    }
+                }
+                if rule.Max > 0 && len(raw) > rule.Max {
+                    if rule.MaxMessage != "" {
+                        errors[field] = rule.MaxMessage
+                    } else {
+                        errors[field] = fmt.Sprintf("%s ne doit pas dépasser %d caractères", field, rule.Max)
+                    }
+                }
+            }
+        }
+        if len(errors) > 0 {
+            dataRow := map[string]interface{}{}
+            for _, f := range ec.Fields {
+                dataRow[f.Name] = c.PostForm(f.Name)
+            }
+            dataRow["id"] = id
+            c.HTML(http.StatusBadRequest, "form.html", gin.H{
+                "Entity":    ec,
+                "Code":      ec.Code,
+                "Mode":      "edit",
+                "DataRow":   dataRow,
+                "Errors":    errors,
+                "Page":      c.Query("page"),
+                "PageSize":  c.Query("pageSize"),
+                "SortField": c.Query("sort"),
+                "SortOrder": c.Query("order"),
+            })
+            return
+        }
+
         updates := map[string]interface{}{}
         for _, f := range ec.Fields {
             if f.ReadOnly || f.Name == "id" {
@@ -242,7 +332,6 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             return
         }
 
-        // Redirection avec highlight
         redirectURL := fmt.Sprintf(
             "%s?page=%s&pageSize=%s&sort=%s&order=%s&highlight=%s",
             listPrefix,

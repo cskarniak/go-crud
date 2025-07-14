@@ -1,0 +1,26 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test binaries
+*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+*.out
+
+# SQLite database files
+*.db
+*.sqlite
+app.db
+
+# Dependency directories (remove the comment if you use Go modules)
+vendor/
+
+# Mac / IDE / Editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
