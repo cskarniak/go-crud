@@ -13,7 +13,13 @@
   <div class="list-card">
     <div class="card shadow-sm">
       <div class="card-header bg-primary text-white">
-        <h2 class="mb-0">{{ .Entity.LabelPlural }}</h2>
+        <h2 class="mb-0">
+          {{ with index .Entity.List.Labels "title" }}
+            {{ . }}        <!-- titre personnalisé si présent -->
+          {{ else }}
+          {{ .Entity.LabelPlural }}  <!-- sinon fallback standard -->
+          {{ end }}
+        </h2>
       </div>
       <div class="card-body">
 

@@ -34,6 +34,8 @@ forms:
       columns: ["id","libelle"]
       searchableFields: ["id","libelle"]
       sortableFields: ["id","libelle"]
+      labels:
+        title: "Liste des catégories"
 
   - name: "categorieFiche"
     type: "fiche"

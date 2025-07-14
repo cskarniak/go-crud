@@ -29,6 +29,7 @@ type ListConfig struct {
     Columns          []string
     SearchableFields []string
     SortableFields   []string
+    Labels           map[string]string 
 }
 
 // Group de champs dans la fiche
@@ -133,6 +134,7 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
                 Columns:          form.Config.Columns,
                 SearchableFields: form.Config.SearchableFields,
                 SortableFields:   form.Config.SortableFields,
+                Labels:           form.Config.Labels,
             }
         case "fiche":
             ec.Fiche = FicheConfig{

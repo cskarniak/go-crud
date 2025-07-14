@@ -57,11 +57,21 @@
 
 /* -------- Largeurs de colonnes -------- */
 .table-fixed th:nth-child(1),
-.table-fixed td:nth-child(1) { width: 50px; }
+.table-fixed td:nth-child(1) { 
+  width: 50px;
+  text-align: left;
+} 
+
 .table-fixed th:nth-child(2),
-.table-fixed td:nth-child(2) { width: 150px; }
+.table-fixed td:nth-child(2) { 
+  width: 150px; 
+  text-align: left;
+}
 .table-fixed th:nth-child(3),
-.table-fixed td:nth-child(3) { width: 100px; }
+.table-fixed td:nth-child(3) {
+   width: 50px;
+   text-align:center; 
+ }
 /* Les autres colonnes se partagent le reste de l’espace */
 
 /* -------- Conteneur responsive du tableau -------- */

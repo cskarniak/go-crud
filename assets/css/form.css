@@ -83,3 +83,17 @@ form .invalid-feedback {
   margin: 0;
   padding-left: 1.25rem; /* indent des li */
 }
+/* Griser et désaturer tous les inputs/textarea/select readonly */
+.form-card .form-control[readonly],
+.form-card .form-select[readonly],
+.form-card textarea[readonly] {
+  background-color: #e9ecef;   /* gris clair */
+  color: #6c757d;              /* texte gris foncé */
+  opacity: 1;                  /* override de toute opacity Bootstrap */
+}
+
+/* Si vous avez des champs de type plaintext : */
+.form-card .form-control-plaintext {
+  background-color: #e9ecef;
+  color: #6c757d;
+}
