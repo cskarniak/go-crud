@@ -24,3 +24,8 @@ vendor/
 *.swp
 .idea/
 .vscode/
+
+# fichier de configuation 
+config.yaml
+
+
