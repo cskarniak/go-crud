@@ -8,15 +8,96 @@ import (
 
     "example.com/go-crud/config/form_codes"
     "example.com/go-crud/config/loader"
+    "gopkg.in/yaml.v3"
 )
 
-// Field décrit un champ d'entité
-type Field struct {
-    Name     string
-    Label    string
-    Type     string
-    ReadOnly bool
-    Required bool
+// --- Types de config combo_base ---
+type ComboFieldConfig struct {
+    SQL           string   `yaml:"sql"`
+    KeyField      string   `yaml:"keyField"`
+    DisplayFields []string `yaml:"displayFields"`
+    Separator     string   `yaml:"separator"`
+}
+
+// FieldDef représente à la fois un champ simple et un combo_base
+type FieldDef struct {
+    Name        string
+    Type        string
+    ComboConfig *ComboFieldConfig
+}
+
+// UnmarshalYAML permet de lire un simple "- name: libelle" ou
+// un bloc complet pour un combo_base.
+func (f *FieldDef) UnmarshalYAML(node *yaml.Node) error {
+    // on part d’une map intermédiaire
+    var raw map[string]yaml.Node
+    if err := node.Decode(&raw); err != nil {
+        return err
+    }
+
+    // name est obligatoire
+    if n, ok := raw["name"]; ok {
+        if err := n.Decode(&f.Name); err != nil {
+            return err
+        }
+    } else {
+        return fmt.Errorf("field entry must have a name")
+    }
+
+    // type, défaut "string"
+    f.Type = "string"
+    if t, ok := raw["type"]; ok {
+        if err := t.Decode(&f.Type); err != nil {
+            return err
+        }
+    }
+
+    // si combo_base, on décode la config
+    if f.Type == "combo_base" {
+        cfg := &ComboFieldConfig{}
+        // SQL
+        if n, ok := raw["sql"]; ok {
+            if err := n.Decode(&cfg.SQL); err != nil {
+                return err
+            }
+        } else {
+            return fmt.Errorf("combo_base %s: missing sql", f.Name)
+        }
+        // keyField
+        if n, ok := raw["keyField"]; ok {
+            if err := n.Decode(&cfg.KeyField); err != nil {
+                return err
+            }
+        }
+        // displayFields
+        if n, ok := raw["displayFields"]; ok {
+            if err := n.Decode(&cfg.DisplayFields); err != nil {
+                return err
+            }
+        }
+        // separator
+        if n, ok := raw["separator"]; ok {
+            if err := n.Decode(&cfg.Separator); err != nil {
+                return err
+            }
+        }
+        f.ComboConfig = cfg
+    }
+
+    return nil
+}
+
+// Group de champs pour la fiche
+type Group struct {
+    Name   string
+    Fields []FieldDef
+}
+
+// FicheConfig configuration pour la fiche
+type FicheConfig struct {
+    Name   string
+    Groups []Group
+    Labels map[string]string
 }
 
 // ListConfig configuration pour la liste
@@ -29,23 +110,19 @@ type ListConfig struct {
     Columns          []string
     SearchableFields []string
     SortableFields   []string
-    Labels           map[string]string 
+    Labels           map[string]string
 }
 
-// Group de champs dans la fiche
-type Group struct {
-    Name   string
-    Fields []string
+// Field décrit un champ d'entité stocké en base
+type Field struct {
+    Name     string
+    Label    string
+    Type     string
+    ReadOnly bool
+    Required bool
 }
 
-// FicheConfig configuration pour la fiche
-type FicheConfig struct {
-    Name   string
-    Groups []Group
-    Labels map[string]string
-}
-
-// EntityConfig structure riche basée sur votre YAML d’entité
+// EntityConfig regroupe tout le config d’une entité
 type EntityConfig struct {
     Name            string
     Table           string
@@ -55,12 +132,10 @@ type EntityConfig struct {
     Fields          []Field
     List            ListConfig
     Fiche           FicheConfig
-
-    // Code de pré‐remplissage et validations (optionnel)
-    Code *form_codes.FormCode
+    Code            *form_codes.FormCode
 }
 
-// yamlEntity reflète la structure de votre YAML categories.yaml
+// yamlEntity reflète la structure YAML de vos fichiers config/entities/*.yaml
 type yamlEntity struct {
     Entity struct {
         Name            string `yaml:"name"`
@@ -87,22 +162,23 @@ type yamlEntity struct {
             Columns          []string          `yaml:"columns"`
             SearchableFields []string          `yaml:"searchableFields"`
             SortableFields   []string          `yaml:"sortableFields"`
-            Groups           []Group           `yaml:"groups"`
             Labels           map[string]string `yaml:"labels"`
+            Groups           []struct {
+                Name   string      `yaml:"name"`
+                Fields []yaml.Node `yaml:"fields"`
+            } `yaml:"groups"`
         } `yaml:"config"`
     } `yaml:"forms"`
 }
 
-// LoadEntityConfig lit le YAML d’entité, construit EntityConfig,
-// puis tente de charger le form‐code associé (pré‐remplissage & validations).
+// LoadEntityConfig lit le YAML d’entité, l’analyse, puis charge le form_code.
 func LoadEntityConfig(path string) (*EntityConfig, error) {
-    // 1) Charger le YAML d’entité
+    // 1) lire et unmarshal YAML
     var y yamlEntity
     if err := loader.Load(path, &y); err != nil {
-        return nil, fmt.Errorf("échec chargement entité %s: %w", path, err)
+        return nil, fmt.Errorf("échec chargement %s : %w", path, err)
     }
 
-    // 2) Transformer en EntityConfig
     ec := &EntityConfig{
         Name:            y.Entity.Name,
         Table:           y.Entity.Table,
@@ -111,6 +187,8 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
         DefaultPageSize: y.Entity.DefaultPageSize,
         Fields:          make([]Field, len(y.Fields)),
     }
+
+    // 2) Fields
     for i, f := range y.Fields {
         ec.Fields[i] = Field{
             Name:     f.Name,
@@ -121,7 +199,7 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
         }
     }
 
-    // 3) Initialiser les forms list et fiche
+    // 3) Forms
     for _, form := range y.Forms {
         switch form.Type {
         case "list":
@@ -137,15 +215,27 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
                 Labels:           form.Config.Labels,
             }
         case "fiche":
-            ec.Fiche = FicheConfig{
+            fc := FicheConfig{
                 Name:   form.Name,
-                Groups: form.Config.Groups,
                 Labels: form.Config.Labels,
             }
+            // décode chaque FieldDef
+            for _, grp := range form.Config.Groups {
+                g := Group{Name: grp.Name}
+                for _, node := range grp.Fields {
+                    var fd FieldDef
+                    if err := node.Decode(&fd); err != nil {
+                        return nil, fmt.Errorf("fields decoding: %w", err)
+                    }
+                    g.Fields = append(g.Fields, fd)
+                }
+                fc.Groups = append(fc.Groups, g)
+            }
+            ec.Fiche = fc
         }
     }
 
-    // 4) Valeurs par défaut si manquantes
+    // 4) Valeurs par défaut
     if ec.DefaultPageSize == 0 {
         ec.DefaultPageSize = 10
     }
@@ -156,10 +246,10 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
         ec.List.DefaultSortOrder = "asc"
     }
 
-    // 5) Charger le form_code associé (s’il existe)
+    // 5) Chargement du form_code
     codePath := filepath.Join("config", "form_codes", ec.Fiche.Name+"_code.yaml")
     if fc, err := form_codes.LoadFormCode(codePath); err != nil {
-        log.Printf("Aucun form code pour %s : %v", ec.Fiche.Name, err)
+        log.Printf("Aucun form_code pour %s: %v", ec.Fiche.Name, err)
     } else {
         ec.Code = fc
     }

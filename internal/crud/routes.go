@@ -15,15 +15,16 @@ import (
 )
 
 // RegisterEntity génère les routes CRUD pour une entité donnée,
-// avec pagination, tri, recherche, pré-remplissage, validations front/back,
+// avec pagination, tri, recherche, combo_base, pré‑remplissage, validations,
 // highlight et affichage inline des erreurs.
 func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
-    listPrefix   := "/" + ec.List.Name
+    listPrefix := "/" + ec.List.Name
     entityPrefix := "/" + ec.Name
-    fichePrefix  := "/" + ec.Fiche.Name
+    fichePrefix := "/" + ec.Fiche.Name
 
     // --- LIST (GET) ---
     r.GET(listPrefix, func(c *gin.Context) {
+        // Pagination
         page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
         pageSize := ec.List.PageSize
         if ps := c.Query("pageSize"); ps != "" {
@@ -32,6 +33,7 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             }
         }
 
+        // Tri
         sortField := c.Query("sort")
         if sortField == "" {
             sortField = ec.List.DefaultSortField
@@ -41,9 +43,13 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             sortOrder = ec.List.DefaultSortOrder
         }
 
+        // Recherche
         search := strings.TrimSpace(c.Query("search"))
+
+        // Highlight
         highlightID, _ := strconv.Atoi(c.Query("highlight"))
 
+        // Build queries
         query := db.Table(ec.Table)
         countQ := db.Table(ec.Table)
         if search != "" && len(ec.List.SearchableFields) > 0 {
@@ -58,25 +64,28 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             countQ = countQ.Where(where, args...)
         }
 
+        // Fetch data
         var data []map[string]interface{}
-        query.
-            Order(sortField + " " + sortOrder).
+        query.Order(sortField+" "+sortOrder).
             Offset((page-1)*pageSize).
             Limit(pageSize).
             Find(&data)
 
+        // Mark highlight
         for _, row := range data {
             if idVal, ok := row["id"]; ok {
-                if idInt, err := strconv.Atoi(fmt.Sprintf("%v", idVal)); err == nil && idInt == highlightID {
+                if idInt, err := strconv.Atoi(fmt.Sprint(idVal)); err == nil && idInt == highlightID {
                     row["_highlight"] = true
                 }
             }
         }
 
+        // Count total
         var total int64
         countQ.Count(&total)
         totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
 
+        // Render
         c.HTML(http.StatusOK, "index.html", gin.H{
             "Entity":          ec,
             "Columns":         ec.List.Columns,
@@ -97,8 +106,9 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         c.Redirect(http.StatusSeeOther, listPrefix+"?"+c.Request.URL.RawQuery)
     })
 
-    // --- NEW (GET) avec pré-remplissage front ---
+    // --- NEW (GET) avec pré‑remplissage et combo_base ---
     r.GET(fichePrefix+"/new", func(c *gin.Context) {
+        // Pré-remplissage
         dataRow := map[string]interface{}{}
         if ec.Code != nil {
             for field, spec := range ec.Code.Prepopulate {
@@ -107,12 +117,43 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
                 }
             }
         }
+
+        // Préparer comboData
+        comboData := map[string][]map[string]interface{}{}
+        for _, grp := range ec.Fiche.Groups {
+            for _, fd := range grp.Fields {
+                if fd.Type != "combo_base" || fd.ComboConfig == nil {
+                    continue
+                }
+                var rows []map[string]interface{}
+                if err := db.Raw(fd.ComboConfig.SQL).Scan(&rows).Error; err != nil {
+                    continue
+                }
+                opts := make([]map[string]interface{}, 0, len(rows))
+                for _, row := range rows {
+                    parts := make([]string, 0, len(fd.ComboConfig.DisplayFields))
+                    for _, col := range fd.ComboConfig.DisplayFields {
+                        if v, ok := row[col]; ok {
+                            parts = append(parts, fmt.Sprint(v))
+                        }
+                    }
+                    label := strings.Join(parts, fd.ComboConfig.Separator)
+                    opts = append(opts, map[string]interface{}{
+                        "Value": row[fd.ComboConfig.KeyField],
+                        "Label": label,
+                    })
+                }
+                comboData[fd.Name] = opts
+            }
+        }
+
         c.HTML(http.StatusOK, "form.html", gin.H{
             "Entity":    ec,
             "Code":      ec.Code,
             "Mode":      "new",
             "DataRow":   dataRow,
-            "Errors":    nil,
+            "Errors":    map[string]string{},  // toujours non-nil
+            "ComboData": comboData,
             "Page":      c.Query("page"),
             "PageSize":  c.Query("pageSize"),
             "SortField": c.Query("sort"),
@@ -120,8 +161,9 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         })
     })
 
-    // --- CREATE (POST) avec validation back et affichage inline des erreurs ---
+    // --- CREATE (POST) avec validation et erreurs inline ---
     r.POST(fichePrefix, func(c *gin.Context) {
+        // Validation back
         errors := map[string]string{}
         if ec.Code != nil {
             for field, rule := range ec.Code.BackValidations {
@@ -153,16 +195,44 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             }
         }
         if len(errors) > 0 {
+            // Reconstituer dataRow et comboData
             dataRow := map[string]interface{}{}
             for _, f := range ec.Fields {
                 dataRow[f.Name] = c.PostForm(f.Name)
             }
+            comboData := map[string][]map[string]interface{}{}
+            for _, grp := range ec.Fiche.Groups {
+                for _, fd := range grp.Fields {
+                    if fd.Type != "combo_base" || fd.ComboConfig == nil {
+                        continue
+                    }
+                    var rows []map[string]interface{}
+                    db.Raw(fd.ComboConfig.SQL).Scan(&rows)
+                    opts := make([]map[string]interface{}, 0, len(rows))
+                    for _, row := range rows {
+                        parts := make([]string, 0, len(fd.ComboConfig.DisplayFields))
+                        for _, col := range fd.ComboConfig.DisplayFields {
+                            if v, ok := row[col]; ok {
+                                parts = append(parts, fmt.Sprint(v))
+                            }
+                        }
+                        label := strings.Join(parts, fd.ComboConfig.Separator)
+                        opts = append(opts, map[string]interface{}{
+                            "Value": row[fd.ComboConfig.KeyField],
+                            "Label": label,
+                        })
+                    }
+                    comboData[fd.Name] = opts
+                }
+            }
+
             c.HTML(http.StatusBadRequest, "form.html", gin.H{
                 "Entity":    ec,
                 "Code":      ec.Code,
                 "Mode":      "new",
                 "DataRow":   dataRow,
                 "Errors":    errors,
+                "ComboData": comboData,
                 "Page":      c.Query("page"),
                 "PageSize":  c.Query("pageSize"),
                 "SortField": c.Query("sort"),
@@ -171,6 +241,7 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             return
         }
 
+        // Inserer en base
         vals := map[string]interface{}{}
         for _, f := range ec.Fields {
             if f.ReadOnly {
@@ -197,16 +268,11 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             return
         }
 
+        // Highlight nouvel enregistrement
         var newID int
-        db.Table(ec.Table).
-            Select("id").
-            Order("id DESC").
-            Limit(1).
-            Scan(&newID)
+        db.Table(ec.Table).Select("id").Order("id DESC").Limit(1).Scan(&newID)
         var countBefore int64
-        db.Table(ec.Table).
-            Where("id <= ?", newID).
-            Count(&countBefore)
+        db.Table(ec.Table).Where("id <= ?", newID).Count(&countBefore)
         page := int((countBefore + int64(ec.List.PageSize) - 1) / int64(ec.List.PageSize))
 
         redirectURL := fmt.Sprintf(
@@ -216,16 +282,15 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         c.Redirect(http.StatusSeeOther, redirectURL)
     })
 
-    // --- EDIT (GET) ---
+    // --- EDIT (GET) avec combo_base ---
     r.GET(fichePrefix+"/edit/:id", func(c *gin.Context) {
         id := c.Param("id")
         var dataRow map[string]interface{}
-        if err := db.Table(ec.Table).
-            Where("id = ?", id).
-            Take(&dataRow).Error; err != nil {
+        if err := db.Table(ec.Table).Where("id = ?", id).Take(&dataRow).Error; err != nil {
             c.String(http.StatusNotFound, "Enregistrement non trouvé")
             return
         }
+        // format date
         for _, f := range ec.Fields {
             if f.Type == "date" {
                 if raw, ok := dataRow[f.Name]; ok && raw != nil {
@@ -238,12 +303,40 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
                 }
             }
         }
+        // Préparer comboData
+        comboData := map[string][]map[string]interface{}{}
+        for _, grp := range ec.Fiche.Groups {
+            for _, fd := range grp.Fields {
+                if fd.Type != "combo_base" || fd.ComboConfig == nil {
+                    continue
+                }
+                var rows []map[string]interface{}
+                db.Raw(fd.ComboConfig.SQL).Scan(&rows)
+                opts := make([]map[string]interface{}, 0, len(rows))
+                for _, row := range rows {
+                    parts := make([]string, 0, len(fd.ComboConfig.DisplayFields))
+                    for _, col := range fd.ComboConfig.DisplayFields {
+                        if v, ok := row[col]; ok {
+                            parts = append(parts, fmt.Sprint(v))
+                        }
+                    }
+                    label := strings.Join(parts, fd.ComboConfig.Separator)
+                    opts = append(opts, map[string]interface{}{
+                        "Value": row[fd.ComboConfig.KeyField],
+                        "Label": label,
+                    })
+                }
+                comboData[fd.Name] = opts
+            }
+        }
+
         c.HTML(http.StatusOK, "form.html", gin.H{
             "Entity":    ec,
             "Code":      ec.Code,
             "Mode":      "edit",
             "DataRow":   dataRow,
-            "Errors":    nil,
+            "Errors":    map[string]string{},
+            "ComboData": comboData,
             "Page":      c.Query("page"),
             "PageSize":  c.Query("pageSize"),
             "SortField": c.Query("sort"),
@@ -251,9 +344,10 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         })
     })
 
-    // --- UPDATE (POST) avec validation back et erreurs inline ---
+    // --- UPDATE (POST) avec validation et erreurs inline ---
     r.POST(fichePrefix+"/update/:id", func(c *gin.Context) {
         id := c.Param("id")
+        // Validation back
         errors := map[string]string{}
         if ec.Code != nil {
             for field, rule := range ec.Code.BackValidations {
@@ -285,17 +379,44 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             }
         }
         if len(errors) > 0 {
-            dataRow := map[string]interface{}{}
+            // Reconstituer dataRow et comboData puis réafficher
+            dataRow := map[string]interface{}{"id": id}
             for _, f := range ec.Fields {
                 dataRow[f.Name] = c.PostForm(f.Name)
             }
-            dataRow["id"] = id
+            comboData := map[string][]map[string]interface{}{}
+            for _, grp := range ec.Fiche.Groups {
+                for _, fd := range grp.Fields {
+                    if fd.Type != "combo_base" || fd.ComboConfig == nil {
+                        continue
+                    }
+                    var rows []map[string]interface{}
+                    db.Raw(fd.ComboConfig.SQL).Scan(&rows)
+                    opts := make([]map[string]interface{}, 0, len(rows))
+                    for _, row := range rows {
+                        parts := make([]string, 0, len(fd.ComboConfig.DisplayFields))
+                        for _, col := range fd.ComboConfig.DisplayFields {
+                            if v, ok := row[col]; ok {
+                                parts = append(parts, fmt.Sprint(v))
+                            }
+                        }
+                        label := strings.Join(parts, fd.ComboConfig.Separator)
+                        opts = append(opts, map[string]interface{}{
+                            "Value": row[fd.ComboConfig.KeyField],
+                            "Label": label,
+                        })
+                    }
+                    comboData[fd.Name] = opts
+                }
+            }
+
             c.HTML(http.StatusBadRequest, "form.html", gin.H{
                 "Entity":    ec,
                 "Code":      ec.Code,
                 "Mode":      "edit",
                 "DataRow":   dataRow,
                 "Errors":    errors,
+                "ComboData": comboData,
                 "Page":      c.Query("page"),
                 "PageSize":  c.Query("pageSize"),
                 "SortField": c.Query("sort"),
@@ -304,6 +425,7 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             return
         }
 
+        // Appliquer update
         updates := map[string]interface{}{}
         for _, f := range ec.Fields {
             if f.ReadOnly || f.Name == "id" {
@@ -325,15 +447,12 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
             }
             updates[f.Name] = v
         }
-        if err := db.Table(ec.Table).
-            Where("id = ?", id).
-            Updates(updates).Error; err != nil {
+        if err := db.Table(ec.Table).Where("id = ?", id).Updates(updates).Error; err != nil {
             c.String(http.StatusBadRequest, "Erreur de mise à jour : %v", err)
             return
         }
 
-        redirectURL := fmt.Sprintf(
-            "%s?page=%s&pageSize=%s&sort=%s&order=%s&highlight=%s",
+        redirectURL := fmt.Sprintf("%s?page=%s&pageSize=%s&sort=%s&order=%s&highlight=%s",
             listPrefix,
             c.Query("page"),
             c.Query("pageSize"),
@@ -346,9 +465,7 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
 
     // --- DELETE (POST) ---
     r.POST(fichePrefix+"/delete/:id", func(c *gin.Context) {
-        db.Table(ec.Table).
-            Where("id = ?", c.Param("id")).
-            Delete(nil)
+        db.Table(ec.Table).Where("id = ?", c.Param("id")).Delete(nil)
         c.Redirect(http.StatusSeeOther, listPrefix)
     })
 }

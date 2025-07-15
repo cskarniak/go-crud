@@ -19,6 +19,11 @@ fields:
     type: "date"
     label:  "Date MAJ"
     required: true
+    # 1) Déclaration du combo_base
+  - name: "pod"
+    type: "combo_base"
+    label: "Pod"
+    required: false
   
   # … ajoutez ici toutes les colonnes issues de votre schéma …
 
@@ -43,7 +48,23 @@ forms:
     config:
       groups:
         - name: "Infos principales"
-          fields: ["id","libelle","date_maj"]
+          fields: 
+          - name: "id"
+          - name: "libelle"
+          - name: "date_maj"
+          - name: "pod"
+            type: combo_base  
+            sql: |
+              SELECT id,libelle
+              FROM categories
+              WHERE 1 = 1
+              ORDER BY libelle
+            keyField: id
+            displayFields:
+                - id
+                - libelle
+            separator: " - "
+      
       labels:
         titleCreate: "Création d’une catégorie"
         titleUpdate: "Édition d’une catégorie"

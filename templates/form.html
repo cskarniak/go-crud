@@ -1,4 +1,3 @@
-<!-- templates/form.html -->
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -16,8 +15,8 @@
   <link href="/assets/css/form.css" rel="stylesheet">
 </head>
 <body>
-  <!-- seule la carte, sa largeur est gérée par .form-card -->
   <div class="card form-card shadow-sm mt-4">
+
     <div class="card-header bg-primary text-white py-2">
       <h5 class="mb-0 text-center">
         {{ if eq .Mode "new" }}
@@ -28,17 +27,6 @@
       </h5>
     </div>
 
-    <!-- Zone d’erreurs back‐end -->
-    {{ if .Errors }}
-      <div class="error-zone mb-3">
-        <ul class="mb-0">
-          {{ range $field, $msg := .Errors }}
-            <li>{{ $msg }}</li>
-          {{ end }}
-        </ul>
-      </div>
-    {{ end }}
-
     <div class="card-body">
       <form
         method="post"
@@ -46,29 +34,66 @@
                   /{{ .Entity.Fiche.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
                 {{- else -}}
                   /{{ .Entity.Fiche.Name }}/update/{{ index .DataRow "id" }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
-                {{- end }}"
-      >
-        {{ range .Entity.Fields }}
-          <div class="row mb-3 align-items-center">
-            <label for="{{ .Name }}" class="col-sm-3 col-form-label fw-bold">
-              {{ .Label }}
-            </label>
-            <div class="col-sm-9">
-              <input
-                type="{{ .Type }}"
-                class="form-control"
-                id="{{ .Name }}"
-                name="{{ .Name }}"
-                value="{{ index $.DataRow .Name }}"
-                {{ if .ReadOnly }}readonly{{ end }}
-                {{ if .Required }}required{{ end }}
-                {{ with index $.Code.FrontValidations .Name }}
-                  {{ if .Required }} required{{ end }}
-                  {{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}
-                {{ end }}
-              />
-            </div>
-          </div>
+                {{- end }}">
+
+        {{/* Boucle sur vos groupes et leurs champs */}}
+        {{ range .Entity.Fiche.Groups }}
+          <fieldset class="mb-4">
+            <legend>{{ .Name }}</legend>
+
+            {{ range .Fields }}
+              {{ $fd := . }}
+              <div class="row mb-3 align-items-center">
+                <label for="{{ $fd.Name }}" class="col-sm-3 col-form-label fw-bold">
+                  {{ $fd.Name }}
+                </label>
+                <div class="col-sm-9">
+
+                  {{ if eq $fd.Type "combo_base" }}
+                    <select
+                      id="{{ $fd.Name }}"
+                      name="{{ $fd.Name }}"
+                      class="form-select{{ if index $.Errors $fd.Name }} is-invalid{{ end }}"
+                      {{ with index $.Code.FrontValidations $fd.Name }}
+                        {{ if .Required }} required{{ end }}
+                      {{ end }}>
+
+                      {{ range $opt := index $.ComboData $fd.Name }}
+                        <option
+                          value="{{ $opt.Value }}"
+                          {{ if eq (printf "%v" $opt.Value) (printf "%v" (index $.DataRow $fd.Name)) }}
+                            selected
+                          {{ end }}>
+                          {{ $opt.Label }}
+                        </option>
+                      {{ end }}
+                    </select>
+
+                  {{ else }}
+                    <input
+                      type="text"
+                      id="{{ $fd.Name }}"
+                      name="{{ $fd.Name }}"
+                      class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}"
+                      value="{{ index $.DataRow $fd.Name }}"
+                      {{ if $fd.ComboConfig }}{{ end }}  {{/* no-op */}}
+                      {{ with index $.Code.FrontValidations $fd.Name }}
+                        {{ if .Required }} required{{ end }}
+                        {{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}
+                      {{ end }}>
+                  {{ end }}
+
+                  {{/* Affichage inline des erreurs back-end */}}
+                  {{ with index $.Errors $fd.Name }}
+                    <div class="invalid-feedback">
+                      {{ . }}
+                    </div>
+                  {{ end }}
+
+                </div>
+              </div>
+            {{ end }}
+          </fieldset>
         {{ end }}
 
         <div class="mt-4 text-end">
@@ -81,11 +106,11 @@
           </button>
           <a
             href="/{{ .Entity.List.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}"
-            class="btn btn-secondary ms-2"
-          >
+            class="btn btn-secondary ms-2">
             {{ index .Entity.Fiche.Labels "cancel" }}
           </a>
         </div>
+
       </form>
     </div>
   </div>
