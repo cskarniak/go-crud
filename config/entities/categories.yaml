@@ -24,6 +24,9 @@ fields:
     type: "combo_base"
     label: "Pod"
     required: false
+  - name: "podvisu"
+    label: "pod visu"
+    required: False
   
   # … ajoutez ici toutes les colonnes issues de votre schéma …
 
@@ -64,7 +67,19 @@ forms:
                 - id
                 - libelle
             separator: " - "
-      
+          - name: "podvisu"
+            type: vision 
+            sql: |
+              SELECT id,libelle
+              FROM categories
+              WHERE 1 = 1
+              ORDER BY libelle
+            keyField: id
+            displayFields: 
+              - id
+              - libelle   
+            returnField: id                # colonne qu’on renvoie dans client_id
+            modalTitle: "Sélectionner une catégorie"  
       labels:
         titleCreate: "Création d’une catégorie"
         titleUpdate: "Édition d’une catégorie"

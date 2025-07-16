@@ -19,32 +19,44 @@ type ComboFieldConfig struct {
     Separator     string   `yaml:"separator"`
 }
 
-// FieldDef représente à la fois un champ simple et un combo_base
-type FieldDef struct {
-    Name        string
-    Type        string
-    ComboConfig *ComboFieldConfig
+// --- Types de config vision ---
+type VisionConfig struct {
+    SQL           string   `yaml:"sql"`
+    KeyField      string   `yaml:"keyField"`
+    DisplayFields []string `yaml:"displayFields"`
+    ReturnField   string   `yaml:"returnField"`
+    ModalTitle    string   `yaml:"modalTitle"`
 }
 
-// UnmarshalYAML permet de lire un simple "- name: libelle" ou
-// un bloc complet pour un combo_base.
+// FieldDef représente un champ simple, combo_base ou vision
+type FieldDef struct {
+    Name         string
+    Type         string
+    ComboConfig  *ComboFieldConfig
+    VisionConfig *VisionConfig
+}
+
+// UnmarshalYAML gère à la fois:
+//  - le simple "- name: ..." (type string par défaut)
+//  - combo_base
+//  - vision
 func (f *FieldDef) UnmarshalYAML(node *yaml.Node) error {
-    // on part d’une map intermédiaire
+    // décoder la map brute
     var raw map[string]yaml.Node
     if err := node.Decode(&raw); err != nil {
         return err
     }
 
-    // name est obligatoire
+    // name (obligatoire)
     if n, ok := raw["name"]; ok {
         if err := n.Decode(&f.Name); err != nil {
             return err
         }
     } else {
-        return fmt.Errorf("field entry must have a name")
+        return fmt.Errorf("field entry missing 'name'")
     }
 
-    // type, défaut "string"
+    // type (défaut "string")
     f.Type = "string"
     if t, ok := raw["type"]; ok {
         if err := t.Decode(&f.Type); err != nil {
@@ -52,10 +64,9 @@ func (f *FieldDef) UnmarshalYAML(node *yaml.Node) error {
         }
     }
 
-    // si combo_base, on décode la config
+    // combo_base ?
     if f.Type == "combo_base" {
         cfg := &ComboFieldConfig{}
-        // SQL
         if n, ok := raw["sql"]; ok {
             if err := n.Decode(&cfg.SQL); err != nil {
                 return err
@@ -63,25 +74,55 @@ func (f *FieldDef) UnmarshalYAML(node *yaml.Node) error {
         } else {
             return fmt.Errorf("combo_base %s: missing sql", f.Name)
         }
-        // keyField
         if n, ok := raw["keyField"]; ok {
             if err := n.Decode(&cfg.KeyField); err != nil {
                 return err
             }
         }
-        // displayFields
         if n, ok := raw["displayFields"]; ok {
             if err := n.Decode(&cfg.DisplayFields); err != nil {
                 return err
             }
         }
-        // separator
         if n, ok := raw["separator"]; ok {
             if err := n.Decode(&cfg.Separator); err != nil {
                 return err
             }
         }
         f.ComboConfig = cfg
+    }
+
+    // vision ?
+    if f.Type == "vision" {
+        vc := &VisionConfig{}
+        if n, ok := raw["sql"]; ok {
+            if err := n.Decode(&vc.SQL); err != nil {
+                return err
+            }
+        } else {
+            return fmt.Errorf("vision %s: missing sql", f.Name)
+        }
+        if n, ok := raw["keyField"]; ok {
+            if err := n.Decode(&vc.KeyField); err != nil {
+                return err
+            }
+        }
+        if n, ok := raw["displayFields"]; ok {
+            if err := n.Decode(&vc.DisplayFields); err != nil {
+                return err
+            }
+        }
+        if n, ok := raw["returnField"]; ok {
+            if err := n.Decode(&vc.ReturnField); err != nil {
+                return err
+            }
+        }
+        if n, ok := raw["modalTitle"]; ok {
+            if err := n.Decode(&vc.ModalTitle); err != nil {
+                return err
+            }
+        }
+        f.VisionConfig = vc
     }
 
     return nil
@@ -135,7 +176,7 @@ type EntityConfig struct {
     Code            *form_codes.FormCode
 }
 
-// yamlEntity reflète la structure YAML de vos fichiers config/entities/*.yaml
+// yamlEntity reflète vos fichiers config/entities/*.yaml
 type yamlEntity struct {
     Entity struct {
         Name            string `yaml:"name"`
@@ -173,7 +214,7 @@ type yamlEntity struct {
 
 // LoadEntityConfig lit le YAML d’entité, l’analyse, puis charge le form_code.
 func LoadEntityConfig(path string) (*EntityConfig, error) {
-    // 1) lire et unmarshal YAML
+    // 1) lire et parse le YAML
     var y yamlEntity
     if err := loader.Load(path, &y); err != nil {
         return nil, fmt.Errorf("échec chargement %s : %w", path, err)
@@ -219,7 +260,6 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
                 Name:   form.Name,
                 Labels: form.Config.Labels,
             }
-            // décode chaque FieldDef
             for _, grp := range form.Config.Groups {
                 g := Group{Name: grp.Name}
                 for _, node := range grp.Fields {
@@ -246,7 +286,7 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
         ec.List.DefaultSortOrder = "asc"
     }
 
-    // 5) Chargement du form_code
+    // 5) Charger le form_code si existant
     codePath := filepath.Join("config", "form_codes", ec.Fiche.Name+"_code.yaml")
     if fc, err := form_codes.LoadFormCode(codePath); err != nil {
         log.Printf("Aucun form_code pour %s: %v", ec.Fiche.Name, err)

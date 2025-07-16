@@ -16,7 +16,6 @@
 </head>
 <body>
   <div class="card form-card shadow-sm mt-4">
-
     <div class="card-header bg-primary text-white py-2">
       <h5 class="mb-0 text-center">
         {{ if eq .Mode "new" }}
@@ -26,7 +25,6 @@
         {{ end }}
       </h5>
     </div>
-
     <div class="card-body">
       <form
         method="post"
@@ -36,11 +34,12 @@
                   /{{ .Entity.Fiche.Name }}/update/{{ index .DataRow "id" }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
                 {{- end }}">
 
-        {{/* Boucle sur vos groupes et leurs champs */}}
+        {{/* Parcours des groupes */}}
         {{ range .Entity.Fiche.Groups }}
           <fieldset class="mb-4">
             <legend>{{ .Name }}</legend>
 
+            {{/* Parcours des champs dans le groupe */}}
             {{ range .Fields }}
               {{ $fd := . }}
               <div class="row mb-3 align-items-center">
@@ -49,6 +48,7 @@
                 </label>
                 <div class="col-sm-9">
 
+                  {{/* --- combo_base --- */}}
                   {{ if eq $fd.Type "combo_base" }}
                     <select
                       id="{{ $fd.Name }}"
@@ -57,7 +57,6 @@
                       {{ with index $.Code.FrontValidations $fd.Name }}
                         {{ if .Required }} required{{ end }}
                       {{ end }}>
-
                       {{ range $opt := index $.ComboData $fd.Name }}
                         <option
                           value="{{ $opt.Value }}"
@@ -69,6 +68,83 @@
                       {{ end }}
                     </select>
 
+                  {{/* --- vision --- */}}
+                  {{ else if eq $fd.Type "vision" }}
+                    <div class="d-flex">
+                      <input
+                        type="text"
+                        id="{{ $fd.Name }}"
+                        name="{{ $fd.Name }}"
+                        readonly
+                        class="form-control me-2{{ if index $.Errors $fd.Name }} is-invalid{{ end }}"
+                        value="{{ index $.DataRow $fd.Name }}">
+                      <button
+                        type="button"
+                        class="btn btn-outline-primary"
+                        data-bs-toggle="modal"
+                        data-bs-target="#modal-{{ $fd.Name }}">
+                        …
+                      </button>
+                    </div>
+
+                    {{/* Modal Bootstrap */}}
+                    <div class="modal fade" id="modal-{{ $fd.Name }}" tabindex="-1">
+                      <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h5 class="modal-title">{{ $fd.VisionConfig.ModalTitle }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                          </div>
+                          <div class="modal-body">
+                            <table class="table table-hover" id="table-{{ $fd.Name }}">
+                              <thead>
+                                <tr>
+                                  {{ range $col := $fd.VisionConfig.DisplayFields }}
+                                    <th>{{ $col }}</th>
+                                  {{ end }}
+                                </tr>
+                              </thead>
+                              <tbody></tbody>
+                            </table>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <script>
+                      (function(){
+                        const modal = document.getElementById("modal-{{ $fd.Name }}");
+                        const displayFields = {{ marshal $fd.VisionConfig.DisplayFields }};
+                        modal.addEventListener("show.bs.modal", () => {
+                          fetch("/{{ $.Entity.Fiche.Name }}/vision-data/{{ $fd.Name }}")
+                            .then(r => r.json())
+                            .then(rows => {
+                              console.log("VISION displayFields:", displayFields);
+                              console.log("VISION rows:", rows);
+
+                              const tbody = modal.querySelector("tbody");
+                              tbody.innerHTML = "";
+                              rows.forEach(row => {
+                                const tr = document.createElement("tr");
+                                displayFields.forEach(col => {
+                                  const td = document.createElement("td");
+                                  td.textContent = row[col] ?? "";
+                                  tr.appendChild(td);
+                                });
+                                tr.style.cursor = "pointer";
+                                tr.onclick = () => {
+                                  document.getElementById("{{ $fd.Name }}").value =
+                                    row["{{ $fd.VisionConfig.ReturnField }}"];
+                                  bootstrap.Modal.getInstance(modal).hide();
+                                };
+                                tbody.appendChild(tr);
+                              });
+                            });
+                        });
+                      })();
+                    </script>
+
+                  {{/* --- autre champ texte --- */}}
                   {{ else }}
                     <input
                       type="text"
@@ -76,7 +152,6 @@
                       name="{{ $fd.Name }}"
                       class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}"
                       value="{{ index $.DataRow $fd.Name }}"
-                      {{ if $fd.ComboConfig }}{{ end }}  {{/* no-op */}}
                       {{ with index $.Code.FrontValidations $fd.Name }}
                         {{ if .Required }} required{{ end }}
                         {{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}
@@ -85,14 +160,13 @@
 
                   {{/* Affichage inline des erreurs back-end */}}
                   {{ with index $.Errors $fd.Name }}
-                    <div class="invalid-feedback">
-                      {{ . }}
-                    </div>
+                    <div class="invalid-feedback">{{ . }}</div>
                   {{ end }}
 
                 </div>
               </div>
             {{ end }}
+
           </fieldset>
         {{ end }}
 
@@ -114,5 +188,7 @@
       </form>
     </div>
   </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
