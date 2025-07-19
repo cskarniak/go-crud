@@ -9,11 +9,16 @@
       {{ index .Entity.Fiche.Labels "titleUpdate" }}
     {{ end }}
   </title>
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-    rel="stylesheet">
-  <link href="/assets/css/form.css" rel="stylesheet">
-  <link href="/assets/css/popup.css" rel="stylesheet">
+  <!-- CSS global Bootstrap -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- CSS global des fiches -->
+  <link href="/assets/css/fiche/form.css" rel="stylesheet">
+  <!-- CSS d'override spécifique à cette fiche -->
+  <link href="/assets/css/fiche/{{ .Entity.Fiche.Name }}-overrides.css" rel="stylesheet">
+  <!-- CSS global des popups -->
+  <link href="/assets/css/popup/popup.css" rel="stylesheet">
+  <!-- CSS d'override spécifique à la popup de cette fiche -->
+  <link href="/assets/css/popup/{{ .Entity.Fiche.Name }}-overrides.css" rel="stylesheet">
 </head>
 <body>
   <div class="card form-card shadow-sm mt-4">
@@ -27,20 +32,16 @@
       </h5>
     </div>
     <div class="card-body">
-      <form
-        method="post"
-        action="{{ if eq .Mode "new" -}}
+      <form method="post" action='{{ if eq .Mode "new" }}
                   /{{ .Entity.Fiche.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
-                {{- else -}}
-                  /{{ .Entity.Fiche.Name }}/update/{{ index .DataRow "id" }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
-                {{- end }}">
+                {{ else }}
+                  /{{ .Entity.Fiche.Name }}/update/{{ index $.DataRow "id" }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
+                {{ end }}'>
 
-        {{/* Parcours des groupes */}}
         {{ range .Entity.Fiche.Groups }}
           <fieldset class="mb-4">
             <legend>{{ .Name }}</legend>
 
-            {{/* Parcours des champs dans le groupe */}}
             {{ range .Fields }}
               {{ $fd := . }}
               <div class="row mb-3 align-items-center">
@@ -49,70 +50,35 @@
                 </label>
                 <div class="col-sm-9">
 
-                  {{/* --- combo_base --- */}}
                   {{ if eq $fd.Type "combo_base" }}
-                    <select
-                      id="{{ $fd.Name }}"
-                      name="{{ $fd.Name }}"
-                      class="form-select{{ if index $.Errors $fd.Name }} is-invalid{{ end }}"
-                      {{ with index $.Code.FrontValidations $fd.Name }}
-                        {{ if .Required }} required{{ end }}
-                      {{ end }}>
+                    <!-- combo_base input -->
+                    <select id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-select{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" {{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ end }}>
                       {{ range $opt := index $.ComboData $fd.Name }}
-                        <option
-                          value="{{ $opt.Value }}"
-                          {{ if eq (printf "%v" $opt.Value) (printf "%v" (index $.DataRow $fd.Name)) }}
-                            selected
-                          {{ end }}>
-                          {{ $opt.Label }}
-                        </option>
+                        <option value="{{ $opt.Value }}" {{ if eq (printf "%v" $opt.Value) (printf "%v" (index $.DataRow $fd.Name)) }} selected{{ end }}>{{ $opt.Label }}</option>
                       {{ end }}
                     </select>
 
-                  {{/* --- vision --- */}}
                   {{ else if eq $fd.Type "vision" }}
+                    <!-- vision input + modal -->
                     <div class="d-flex">
-                      <input
-                        type="text"
-                        id="{{ $fd.Name }}"
-                        name="{{ $fd.Name }}"
-                        readonly
-                        class="form-control me-2{{ if index $.Errors $fd.Name }} is-invalid{{ end }}"
-                        value="{{ index $.DataRow $fd.Name }}">
-                      <button
-                        type="button"
-                        class="btn-clode btn-close-whiteoutline-primary"
-                        data-bs-toggle="modal"
-                        data-bs-target="#modal-{{ $fd.Name }}">
-                        …
-                      </button>
+                      <input type="text" id="{{ $fd.Name }}" name="{{ $fd.Name }}" readonly class="form-control me-2{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $fd.Name }}">
+                      <button type="button" class="btn-clode btn-close-whiteoutline-primary" data-bs-toggle="modal" data-bs-target="#modal-{{ $fd.Name }}">…</button>
                     </div>
 
-                    {{/* Modal Bootstrap */}}
-                    <div class="modal fade" id="modal-{{ $fd.Name }}" tabindex="-1">
-                      <div class="modal-dialog modal-lg">
+                    <!-- Modal générique vision -->
+                    <div class="modal fade vision-modal" id="modal-{{ $fd.Name }}" tabindex="-1">
+                      <div class="modal-dialog">
                         <div class="modal-content">
                           <div class="modal-header">
                             <h5 class="modal-title">{{ $fd.VisionConfig.ModalTitle }}</h5>
                             <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                           </div>
                           <div class="modal-body">
-                            <!-- Champ de recherche -->
                             <div class="mb-3">
-                              <input
-                                type="text"
-                                id="search-{{ $fd.Name }}"
-                                class="form-control"
-                                placeholder="Rechercher…">
+                              <input type="text" id="search-{{ $fd.Name }}" class="form-control" placeholder="Rechercher…">
                             </div>
                             <table class="table table-hover" id="table-{{ $fd.Name }}">
-                              <thead>
-                                <tr>
-                                  {{ range $col := $fd.VisionConfig.DisplayFields }}
-                                    <th>{{ $col }}</th>
-                                  {{ end }}
-                                </tr>
-                              </thead>
+                              <thead><tr>{{ range $col := $fd.VisionConfig.DisplayFields }}<th>{{ $col }}</th>{{ end }}</tr></thead>
                               <tbody></tbody>
                             </table>
                           </div>
@@ -122,106 +88,58 @@
 
                     <script>
                     (function(){
-                      const modal       = document.getElementById("modal-{{ $fd.Name }}");
+                      const modal = document.getElementById("modal-{{ $fd.Name }}");
                       const displayFields = {{ marshal $fd.VisionConfig.DisplayFields }};
-                      const tbody       = modal.querySelector("tbody");
+                      const tbody = modal.querySelector("tbody");
                       const searchInput = modal.querySelector("#search-{{ $fd.Name }}");
 
-                      // Fonction pour remplir le <tbody> à partir d’un tableau de rows
                       function populateRows(rows) {
                         tbody.innerHTML = "";
                         rows.forEach(row => {
                           const tr = document.createElement("tr");
                           displayFields.forEach(col => {
-                            const td = document.createElement("td");
-                            td.textContent = row[col] ?? "";
-                            tr.appendChild(td);
+                            const td = document.createElement("td"); td.textContent = row[col] ?? ""; tr.appendChild(td);
                           });
                           tr.style.cursor = "pointer";
-                          tr.onclick = () => {
-                            document.getElementById("{{ $fd.Name }}").value =
-                              row["{{ $fd.VisionConfig.ReturnField }}"];
-                            bootstrap.Modal.getInstance(modal).hide();
-                          };
+                          tr.onclick = () => { document.getElementById("{{ $fd.Name }}").value = row["{{ $fd.VisionConfig.ReturnField }}"]; bootstrap.Modal.getInstance(modal).hide(); };
                           tbody.appendChild(tr);
                         });
                       }
 
-                      // Fonction de filtrage des lignes du <tbody>
                       function filterRows(term) {
                         const filter = term.trim().toLowerCase();
                         tbody.querySelectorAll("tr").forEach(tr => {
-                          // on concatène le texte de toutes les cellules
-                          const text = Array.from(tr.cells)
-                                            .map(td => td.textContent.toLowerCase())
-                                            .join(" ");
-                          tr.style.display = (filter === "" || text.includes(filter))
-                                            ? ""  // visible
-                                            : "none"; // caché
+                          const text = Array.from(tr.cells).map(td => td.textContent.toLowerCase()).join(" ");
+                          tr.style.display = (filter === "" || text.includes(filter)) ? "" : "none";
                         });
                       }
 
-                      // Quand la modal s’ouvre, on va chercher les données, on remplit et on réinitialise la recherche
                       modal.addEventListener("shown.bs.modal", () => {
                         fetch("/{{ $.Entity.Fiche.Name }}/vision-data/{{ $fd.Name }}")
                           .then(r => r.json())
-                          .then(rows => {
-                            populateRows(rows);
-                            searchInput.value = "";
-                            filterRows("");
-                            // donner le focus au champ de recherche
-                            searchInput.focus();
-                          })
+                          .then(rows => { populateRows(rows); searchInput.value = ""; filterRows(""); searchInput.focus(); })
                           .catch(console.error);
                       });
 
-                      // Brancher l’input de recherche sur l’événement “input”
-                      searchInput.addEventListener("input", e => {
-                        filterRows(e.target.value);
-                      });
+                      searchInput.addEventListener("input", e => filterRows(e.target.value));
                     })();
                     </script>
 
-
-                  {{/* --- autre champ texte --- */}}
                   {{ else }}
-                    <input
-                      type="text"
-                      id="{{ $fd.Name }}"
-                      name="{{ $fd.Name }}"
-                      class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}"
-                      value="{{ index $.DataRow $fd.Name }}"
-                      {{ with index $.Code.FrontValidations $fd.Name }}
-                        {{ if .Required }} required{{ end }}
-                        {{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}
-                      {{ end }}>
+                    <input type="text" id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $fd.Name }}" {{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}{{ end }}>
                   {{ end }}
 
-                  {{/* Affichage inline des erreurs back-end */}}
-                  {{ with index $.Errors $fd.Name }}
-                    <div class="invalid-feedback">{{ . }}</div>
-                  {{ end }}
+                  {{ with index $.Errors $fd.Name }}<div class="invalid-feedback">{{ . }}</div>{{ end }}
 
                 </div>
               </div>
             {{ end }}
-
           </fieldset>
         {{ end }}
 
         <div class="mt-4 text-end">
-          <button type="submit" class="btn btn-success">
-            {{ if eq .Mode "new" }}
-              {{ index .Entity.Fiche.Labels "submitCreate" }}
-            {{ else }}
-              {{ index .Entity.Fiche.Labels "submitUpdate" }}
-            {{ end }}
-          </button>
-          <a
-            href="/{{ .Entity.List.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}"
-            class="btn btn-secondary ms-2">
-            {{ index .Entity.Fiche.Labels "cancel" }}
-          </a>
+          <button type="submit" class="btn btn-success">{{ if eq .Mode "new" }}{{ index .Entity.Fiche.Labels "submitCreate" }}{{ else }}{{ index .Entity.Fiche.Labels "submitUpdate" }}{{ end }}</button>
+          <a href="/{{ .Entity.List.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}" class="btn btn-secondary ms-2">{{ index .Entity.Fiche.Labels "cancel" }}</a>
         </div>
 
       </form>

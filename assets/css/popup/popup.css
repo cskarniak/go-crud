@@ -1,0 +1,66 @@
+/* --------------------------------------------------
+   Styles de base pour toutes les popups "vision"
+   À appliquer sur la classe .vision-modal
+   -------------------------------------------------- */
+
+/* 1) Largeur maximale de la fenêtre */
+.vision-modal .modal-dialog {
+  max-width: 600px; /* ajustable globalement ou surchargé par id */
+}
+
+/* 2) Mise en forme du contenu */
+.vision-modal .modal-content {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* 3) Styles du tableau */
+.vision-modal table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+/* 4) Cellules (padding, overflow) */
+.vision-modal table th,
+.vision-modal table td {
+  padding: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 5) Hauteur et centrage vertical */
+.vision-modal table tbody td {
+  height: 30px !important;
+  line-height: 30px !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* 6) Zebra-striping */
+.vision-modal table tbody tr:nth-child(odd) td {
+  background-color: #f9faff !important;
+}
+.vision-modal table tbody tr:nth-child(even) td {
+  background-color: #e5f0ff !important;
+}
+
+/* 7) Effet au survol */
+.vision-modal table tbody tr:hover td {
+  background-color: #d0e7ff !important;
+}
+
+/* 8) En-tête de tableau */
+.vision-modal table thead th {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+/* 9) Bouton de fermeture */
+.vision-modal .modal-header .btn-close {
+  filter: brightness(0) invert(1);
+}

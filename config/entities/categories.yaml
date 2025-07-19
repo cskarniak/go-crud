@@ -73,6 +73,7 @@ forms:
             separator: " - "
           - name: "podvisu"
             type: vision 
+            cssClass: "field-podvisu"
             sql: |
               SELECT id,libelle
               FROM categories
