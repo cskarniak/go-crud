@@ -161,6 +161,8 @@ type Field struct {
     Type     string
     ReadOnly bool
     Required bool
+    // Valeur par défaut si rien n'est saisi
+    Default  interface{}
 }
 
 // EntityConfig regroupe tout le config d’une entité
@@ -183,14 +185,15 @@ type yamlEntity struct {
         Table           string `yaml:"table"`
         Label           string `yaml:"label"`
         LabelPlural     string `yaml:"labelPlural"`
-        DefaultPageSize int    `yaml:"defaultPageSize"`
+        DefaultPageSize int    `yaml:"defaultPageSize,omitempty"`
     } `yaml:"entity"`
     Fields []struct {
-        Name     string `yaml:"name"`
-        Type     string `yaml:"type"`
-        Label    string `yaml:"label"`
-        ReadOnly bool   `yaml:"readonly,omitempty"`
-        Required bool   `yaml:"required,omitempty"`
+        Name     string      `yaml:"name"`
+        Type     string      `yaml:"type,omitempty"`
+        Label    string      `yaml:"label"`
+        ReadOnly bool        `yaml:"readonly,omitempty"`
+        Required bool        `yaml:"required,omitempty"`
+        Default  interface{} `yaml:"default,omitempty"`
     } `yaml:"fields"`
     Forms []struct {
         Name   string `yaml:"name"`
@@ -237,6 +240,7 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
             Type:     f.Type,
             ReadOnly: f.ReadOnly,
             Required: f.Required,
+            Default:  f.Default,
         }
     }
 
@@ -275,7 +279,7 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
         }
     }
 
-    // 4) Valeurs par défaut
+    // 4) Valeurs par défaut génériques
     if ec.DefaultPageSize == 0 {
         ec.DefaultPageSize = 10
     }

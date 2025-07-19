@@ -45,6 +45,9 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
         highlightID, _ := strconv.Atoi(c.Query("highlight"))
 
         query := db.Table(ec.Table)
+        // On ne récupère que les colonnes spécifiées dans le YAML
+        query = db.Table(ec.Table).
+            Select(ec.List.Columns)
         countQ := db.Table(ec.Table)
         if search != "" && len(ec.List.SearchableFields) > 0 {
             var conds []string

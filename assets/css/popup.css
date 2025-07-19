@@ -1,0 +1,75 @@
+/* --------------------------------------------------
+   Styles spécifiques à la popup “podvisu”
+   -------------------------------------------------- */
+
+/* 1) Largeur maximale de la fenêtre */
+#modal-podvisu .modal-dialog {
+  max-width: 600px;  /* ajustez selon vos besoins */
+}
+
+/* 2) Mise en forme du contenu de la popup */
+#modal-podvisu .modal-content {
+  border-radius: 0.5rem;
+  overflow: hidden;
+}
+
+/* 3) Tableau à l’intérieur de la modal */
+#modal-podvisu table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* colonnes à largeur fixe */
+}
+
+/* 4) Largeurs de colonnes */
+#modal-podvisu table th:nth-child(1),
+#modal-podvisu table td:nth-child(1) {
+  width: 80px;   /* Colonne 1 */
+}
+#modal-podvisu table th:nth-child(2),
+#modal-podvisu table td:nth-child(2) {
+  width: 150px;  /* Colonne 2 */
+}
+/* etc. pour chaque colonne supplémentaire… */
+
+/* 5) Hauteur des lignes appliquée sur les cellules */
+#modal-podvisu table tbody td {
+  height: 30px       !important;  /* hauteur désirée */
+  line-height: 30px  !important;  /* centre verticalement le texte */
+  padding-top: 0     !important;  /* on supprime tout padding vertical */
+  padding-bottom: 0  !important;
+}
+
+/* 6) Zebra‐striping personnalisé (appliqué sur les cellules) */
+#modal-podvisu table tbody tr:nth-child(odd) td {
+  background-color: #f9faff !important;  /* lignes impaires */
+}
+#modal-podvisu table tbody tr:nth-child(even) td {
+  background-color: #e5f0ff !important;  /* lignes paires */
+}
+
+/* 7) Effet au survol */
+#modal-podvisu table tbody tr:hover td {
+  background-color: #d0e7ff !important;
+}
+
+/* 8) En-tête de tableau */
+#modal-podvisu table thead th {
+  background-color: #007bff;
+  color: #fff;
+  font-weight: 600;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+/* 9) Cellules du tableau */
+#modal-podvisu table td {
+  padding: 0.5rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 10) Bouton de fermeture (optionnel) */
+#modal-podvisu .modal-header .btn-close {
+  filter: brightness(0) invert(1);
+}

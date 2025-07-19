@@ -12,9 +12,11 @@ fields:
     type: "uint"
     label: "id"
     readonly: true
+    default: null
   - name: "libelle"
     type: "string"
     label: "Labellé"
+    default: ""
   - name: "date_maj"
     type: "date"
     label:  "Date MAJ"
@@ -24,9 +26,11 @@ fields:
     type: "combo_base"
     label: "Pod"
     required: false
+    default: null
   - name: "podvisu"
     label: "pod visu"
     required: False
+    default: null
   
   # … ajoutez ici toutes les colonnes issues de votre schéma …
 
