@@ -31,6 +31,7 @@ fields:
     label: "pod visu"
     required: False
     default: null
+    readonly: false
   
   # … ajoutez ici toutes les colonnes issues de votre schéma …
 
