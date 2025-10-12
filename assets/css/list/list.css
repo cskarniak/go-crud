@@ -1,5 +1,22 @@
 /* assets/css/list.css */
 
+/* assets/css/list.css */
+
+/* =====================================================
+   BLOC DE CONFIGURATION DES COULEURS
+   Modifiez les valeurs ici pour changer l'apparence
+===================================================== */
+:root {
+  --zebra-odd-bg-color: #cfe2ff;   /* Couleur de fond des lignes impaires (bleu pastel) */
+  --zebra-odd-text-color: #052c65; /* Couleur du texte des lignes impaires */
+  --zebra-even-bg-color: #ffffff;  /* Couleur de fond des lignes paires */
+  --zebra-even-text-color: #000000; /* Couleur du texte des lignes paires */
+  --table-hover-bg-color: #FFDFBF;  /* ✨ Couleur de la ligne au survol ✨ */
+  --highlight-row-bg-color: #fff3cd; /* ✨ Couleur de la ligne surlignée (après une action) ✨ */
+}
+/* ===================================================== */
+
+
 /* -------- Carte de la liste (largeur et centrage) -------- */
 .list-card {
   width: 50%;           /* ajustez ici la largeur globale */
@@ -112,22 +129,25 @@
 
 /* -------- Zebra striping -------- */
 .table-striped > tbody > tr:nth-of-type(odd) > td {
-  background-color: var(--bs-primary-bg-subtle) !important;
-  color: var(--bs-blue-text-color)    !important;
+  background-color: var(--zebra-odd-bg-color) !important;
+  color: var(--zebra-odd-text-color)    !important;
 }
 .table-striped > tbody > tr:nth-of-type(even) > td {
-  background-color: #ffffff !important;
-  color: #000     !important;
+  background-color: var(--zebra-even-bg-color) !important;
+ color: var(--zebra-even-text-color)     !important;
 }
 
 /* Override Zebra striping for highlighted row */
+/* On utilise maintenant la variable pour la ligne surlignée */
 .table-striped > tbody > tr.highlight-row > td {
-  background-color: #fff3cd !important;
+  background-color: var(--highlight-row-bg-color) !important;
 }
+
 
 /* -------- Hover -------- */
 .table-hover > tbody > tr:hover > td {
-  background-color: #d0eaff !important;
+  /* On utilise maintenant la variable pour le survol */
+  background-color: var(--table-hover-bg-color) !important;
 }
 
 /* -------- Bordures verticales -------- */
@@ -192,15 +212,7 @@
   padding: 0.2rem  !important; /* réduit la padding */
   overflow: hidden;
 }
-.table tbody .btn,
-.table tbody .btn-sm {
-  height: 1.5rem      !important;
-  line-height: 2rem   !important;
-  padding: 0 0.75rem  !important;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
+
 /* Ligne surlignée après création/édition */
 .highlight-row {
   background-color: #e7cf82 !important; /* pastel warning */

@@ -28,6 +28,7 @@ fields:
     required: false
     default: null
   - name: "podvisu"
+    type: "uint"
     label: "pod visu"
     required: False
     default: null
