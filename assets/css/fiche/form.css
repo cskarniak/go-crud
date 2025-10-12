@@ -1,17 +1,54 @@
-/* form.css */
+/* assets/css/fiche/form.css */
+
+/* =====================================================
+   BLOC DE CONFIGURATION DES COULEURS DU FORMULAIRE
+   Modifiez les valeurs ici pour changer l'apparence
+===================================================== */
+:root {
+  /* Couleurs du conteneur */
+  --form-bg-color: #ffffff;
+  --form-border-color: #dee2e6;
+  --form-shadow-color: rgba(0, 0, 0, 0.05);
+
+  /* Couleurs des textes */
+  --form-title-color: #343a40;
+  --form-label-color: #495057;
+
+  /* Couleurs des champs (inputs) */
+  --form-input-border-color: #ced4da;
+  --form-input-focus-border-color: #86b7fe;
+  --form-input-focus-shadow-color: rgba(13, 110, 253, 0.25);
+
+  /* Couleurs des champs readonly */
+  --form-readonly-bg-color: #e9ecef;
+  --form-readonly-text-color: #6c757d;
+
+  /* Couleurs des boutons */
+  --form-btn-success-bg-color: #198754;
+  --form-btn-success-border-color: #157347;
+
+  /* Couleurs des erreurs */
+  --form-error-border-color: #dc3545;
+  --form-error-text-color: #dc3545;
+  --form-error-zone-bg-color: #f8d7da;
+  --form-error-zone-text-color: #842029;
+  --form-error-zone-border-color: #f5c2c7;
+}
+/* ===================================================== */
+
 
 /* Conteneur du formulaire */
 form {
-  background-color: #ffffff;
+  background-color: var(--form-bg-color);
   padding: 1.5rem;
-  border: 1px solid #dee2e6;
+  border: 1px solid var(--form-border-color);
   border-radius: 0.5rem;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 6px var(--form-shadow-color);
 }
 
 /* Titres de section */
 form h1, form legend {
-  color: #343a40;
+  color: var(--form-title-color);
   margin-bottom: 1rem;
 }
 
@@ -22,7 +59,7 @@ form .mb-3 {
 
 form label {
   font-weight: 500;
-  color: #495057;
+  color: var(--form-label-color);
 }
 
 form input.form-control,
@@ -30,7 +67,7 @@ form select.form-select,
 form textarea.form-control {
   height: calc(1.5em + 1rem + 2px);
   padding: 0.5rem 0.75rem;
-  border: 1px solid #ced4da;
+  border: 1px solid var(--form-input-border-color);
   border-radius: 0.375rem;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
@@ -38,14 +75,14 @@ form textarea.form-control {
 form input.form-control:focus,
 form select.form-select:focus,
 form textarea.form-control:focus {
-  border-color: #86b7fe;
-  box-shadow: 0 0 0 0.2rem rgba(13,110,253,0.25);
+  border-color: var(--form-input-focus-border-color);
+  box-shadow: 0 0 0 0.2rem var(--form-input-focus-shadow-color);
 }
 
 /* Boutons */
 form .btn-success {
-  background-color: #198754;
-  border-color: #157347;
+  background-color: var(--form-btn-success-bg-color);
+  border-color: var(--form-btn-success-border-color);
   padding: 0.5rem 1rem;
 }
 
@@ -54,46 +91,48 @@ form .btn-secondary {
   margin-left: 0.5rem;
 }
 
-/* Messages d’erreur (optionnel) */
+/* Messages d’erreur */
 form .is-invalid {
-  border-color: #dc3545;
+  border-color: var(--form-error-border-color);
 }
 
 form .invalid-feedback {
   display: block;
-  color: #dc3545;
+  color: var(--form-error-text-color);
   font-size: 0.875rem;
   margin-top: 0.25rem;
 }
+
 /* Contrôle de la largeur de la fiche */
 .form-card {
-  max-width: 600px;    /* Ajustez la largeur souhaitée */
-  margin: 2rem auto;   /* Centré horizontalement + espace vertical */
+  max-width: 600px;
+  margin: 2rem auto;
 }
 
-/* Zone d’erreurs en fond pastel (modifiable) */
+/* Zone d’erreurs en fond pastel */
 .error-zone {
-  background-color: #f8d7da;   /* pastel rouge clair */
-  color: #842029;              /* texte plus sombre */
-  border: 1px solid #f5c2c7;   /* bordure assortie */
+  background-color: var(--form-error-zone-bg-color);
+  color: var(--form-error-zone-text-color);
+  border: 1px solid var(--form-error-zone-border-color);
   border-radius: 0.25rem;
   padding: 0.75rem 1rem;
 }
 .error-zone ul {
   margin: 0;
-  padding-left: 1.25rem; /* indent des li */
+  padding-left: 1.25rem;
 }
+
 /* Griser et désaturer tous les inputs/textarea/select readonly */
 .form-card .form-control[readonly],
 .form-card .form-select[readonly],
 .form-card textarea[readonly] {
-  background-color: #e9ecef;   /* gris clair */
-  color: #6c757d;              /* texte gris foncé */
-  opacity: 1;                  /* override de toute opacity Bootstrap */
+  background-color: var(--form-readonly-bg-color);
+  color: var(--form-readonly-text-color);
+  opacity: 1;
 }
 
 /* Si vous avez des champs de type plaintext : */
 .form-card .form-control-plaintext {
-  background-color: #e9ecef;
-  color: #6c757d;
+  background-color: var(--form-readonly-bg-color);
+  color: var(--form-readonly-text-color);
 }
