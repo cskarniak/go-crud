@@ -28,6 +28,40 @@ type VisionFieldConfig struct {
 	ModalTitle    string   `yaml:"modalTitle"`
 }
 
+// --- NOUVEAUX types de config pour le FORMULAIRE de type 'vision' ---
+
+// VisionParamConfig définit un paramètre pour une requête de formulaire 'vision'.
+type VisionParamConfig struct {
+	Name         string `yaml:"name"`
+	Source       string `yaml:"source"`       // "context" ou "literal"
+	ContextField string `yaml:"contextField"` // si source est "context"
+	Value        string `yaml:"value"`        // si source est "literal"
+}
+
+// VisionActionsConfig définit les actions autorisées sur un formulaire 'vision'.
+type VisionActionsConfig struct {
+	AllowCreate bool `yaml:"allowCreate"`
+	AllowUpdate bool `yaml:"allowUpdate"`
+	AllowDelete bool `yaml:"allowDelete"`
+}
+
+// VisionFormConfig est la configuration pour un FORMULAIRE de type 'vision'.
+type VisionFormConfig struct {
+	Name    string              `yaml:"name"`
+	Type    string              `yaml:"type"`
+	SQL     string              `yaml:"sql"`
+	Params  []VisionParamConfig `yaml:"params"`
+	Actions VisionActionsConfig `yaml:"actions"`
+
+	// Champs réutilisés de ListConfig pour l'affichage
+	Columns          []string          `yaml:"columns"`
+	Labels           map[string]string `yaml:"labels"`
+	DefaultSortField string            `yaml:"defaultSortField"`
+	DefaultSortOrder string            `yaml:"defaultSortOrder"`
+	PageSize         int               `yaml:"pageSize"`
+	PageSizeOptions  []int             `yaml:"pageSizeOptions"`
+}
+
 // FieldDef représente un champ simple, combo_base ou vision
 type FieldDef struct {
 	Name         string
@@ -112,10 +146,11 @@ type EntityConfig struct {
 	Fields          []Field
 	List            ListConfig
 	Fiche           FicheConfig
+	VisionForms     map[string]VisionFormConfig // Map pour stocker les formulaires 'vision'
 	Code            *form_codes.FormCode
 }
 
-// yamlEntity reflète vos fichiers config/entities/*.yaml
+// yamlEntity reflète la structure des fichiers YAML
 type yamlEntity struct {
 	Entity struct {
 		Name            string `yaml:"name"`
@@ -133,107 +168,95 @@ type yamlEntity struct {
 		Default  interface{} `yaml:"default,omitempty"`
 	} `yaml:"fields"`
 	Forms []struct {
-		Name   string `yaml:"name"`
-		Type   string `yaml:"type"`
-		Config struct {
-			PageSize         int               `yaml:"pageSize"`
-			DefaultSortField string            `yaml:"defaultSortField"`
-			DefaultSortOrder string            `yaml:"defaultSortOrder"`
-			PageSizeOptions  []int             `yaml:"pageSizeOptions"`
-			Columns          []string          `yaml:"columns"`
-			SearchableFields []string          `yaml:"searchableFields"`
-			SortableFields   []string          `yaml:"sortableFields"`
-			Labels           map[string]string `yaml:"labels"`
-			Groups           []struct {
-				Name   string      `yaml:"name"`
-				Fields []yaml.Node `yaml:"fields"`
-			} `yaml:"groups"`
-		} `yaml:"config"`
+		Name   string    `yaml:"name"`
+		Type   string    `yaml:"type"`
+		Config yaml.Node `yaml:"config"` // Utiliser yaml.Node pour un décodage flexible
 	} `yaml:"forms"`
 }
 
-// LoadEntityConfig lit le YAML d’entité, l’analyse, puis charge le form_code.
+// LoadEntityConfig lit et analyse la configuration d'une entité.
 func LoadEntityConfig(path string) (*EntityConfig, error) {
-    // 1) lire et parse le YAML
-    var y yamlEntity
-    if err := loader.Load(path, &y); err != nil {
-        return nil, fmt.Errorf("échec chargement %s : %w", path, err)
-    }
+	var y yamlEntity
+	if err := loader.Load(path, &y); err != nil {
+		return nil, fmt.Errorf("échec chargement %s : %w", path, err)
+	}
 
-    ec := &EntityConfig{
-        Name:            y.Entity.Name,
-        Table:           y.Entity.Table,
-        Label:           y.Entity.Label,
-        LabelPlural:     y.Entity.LabelPlural,
-        DefaultPageSize: y.Entity.DefaultPageSize,
-        Fields:          make([]Field, len(y.Fields)),
-    }
+	ec := &EntityConfig{
+		Name:            y.Entity.Name,
+		Table:           y.Entity.Table,
+		Label:           y.Entity.Label,
+		LabelPlural:     y.Entity.LabelPlural,
+		DefaultPageSize: y.Entity.DefaultPageSize,
+		Fields:          make([]Field, len(y.Fields)),
+		VisionForms:     make(map[string]VisionFormConfig), // Initialiser la map
+	}
 
-    // 2) Fields
-    for i, f := range y.Fields {
-        ec.Fields[i] = Field{
-            Name:     f.Name,
-            Label:    f.Label,
-            Type:     f.Type,
-            ReadOnly: f.ReadOnly,
-            Required: f.Required,
-            Default:  f.Default,
-        }
-    }
+	for i, f := range y.Fields {
+		ec.Fields[i] = Field{f.Name, f.Label, f.Type, f.ReadOnly, f.Required, f.Default}
+	}
 
-    // 3) Forms
-    for _, form := range y.Forms {
-        switch form.Type {
-        case "list":
-            ec.List = ListConfig{
-                Name:             form.Name,
-                PageSize:         form.Config.PageSize,
-                DefaultSortField: form.Config.DefaultSortField,
-                DefaultSortOrder: form.Config.DefaultSortOrder,
-                PageSizeOptions:  form.Config.PageSizeOptions,
-                Columns:          form.Config.Columns,
-                SearchableFields: form.Config.SearchableFields,
-                SortableFields:   form.Config.SortableFields,
-                Labels:           form.Config.Labels,
-            }
-        case "fiche":
-            fc := FicheConfig{
-                Name:   form.Name,
-                Labels: form.Config.Labels,
-            }
-            for _, grp := range form.Config.Groups {
-                g := Group{Name: grp.Name}
-                for _, node := range grp.Fields {
-                    var fd FieldDef
-                    if err := node.Decode(&fd); err != nil {
-                        return nil, fmt.Errorf("fields decoding: %w", err)
-                    }
-                    g.Fields = append(g.Fields, fd)
-                }
-                fc.Groups = append(fc.Groups, g)
-            }
-            ec.Fiche = fc
-        }
-    }
+	for _, form := range y.Forms {
+		switch form.Type {
+		case "list":
+			var listCfg ListConfig
+			if err := form.Config.Decode(&listCfg); err != nil {
+				return nil, fmt.Errorf("erreur décodage 'list' form %s: %w", form.Name, err)
+			}
+			listCfg.Name = form.Name
+			ec.List = listCfg
+		case "fiche":
+			var ficheNode struct { // Structure temporaire pour le décodage
+				Labels map[string]string `yaml:"labels"`
+				Groups []struct {
+					Name   string      `yaml:"name"`
+					Fields []yaml.Node `yaml:"fields"`
+				} `yaml:"groups"`
+			}
+			if err := form.Config.Decode(&ficheNode); err != nil {
+				return nil, fmt.Errorf("erreur décodage 'fiche' form %s: %w", form.Name, err)
+			}
+			fc := FicheConfig{Name: form.Name, Labels: ficheNode.Labels}
+			for _, grp := range ficheNode.Groups {
+				g := Group{Name: grp.Name}
+				for _, node := range grp.Fields {
+					var fd FieldDef
+					if err := node.Decode(&fd); err != nil {
+						return nil, fmt.Errorf("fields decoding: %w", err)
+					}
+					g.Fields = append(g.Fields, fd)
+				}
+				fc.Groups = append(fc.Groups, g)
+			}
+			ec.Fiche = fc
+		case "vision":
+			var visionCfg VisionFormConfig
+			if err := form.Config.Decode(&visionCfg); err != nil {
+				return nil, fmt.Errorf("erreur décodage 'vision' form %s: %w", form.Name, err)
+			}
+			visionCfg.Name = form.Name
+			visionCfg.Type = form.Type
+			ec.VisionForms[form.Name] = visionCfg
+		}
+	}
 
-    // 4) Valeurs par défaut génériques
-    if ec.DefaultPageSize == 0 {
-        ec.DefaultPageSize = 10
-    }
-    if ec.List.DefaultSortField == "" && len(ec.Fields) > 0 {
-        ec.List.DefaultSortField = ec.Fields[0].Name
-    }
-    if ec.List.DefaultSortOrder == "" {
-        ec.List.DefaultSortOrder = "asc"
-    }
+	// Valeurs par défaut génériques
+	if ec.DefaultPageSize == 0 {
+		ec.DefaultPageSize = 10
+	}
+	if ec.List.DefaultSortField == "" && len(ec.Fields) > 0 {
+		ec.List.DefaultSortField = ec.Fields[0].Name
+	}
+	if ec.List.DefaultSortOrder == "" {
+		ec.List.DefaultSortOrder = "asc"
+	}
 
-    // 5) Charger le form_code si existant
-    codePath := filepath.Join("config", "form_codes", ec.Fiche.Name+"_code.yaml")
-    if fc, err := form_codes.LoadFormCode(codePath); err != nil {
-        log.Printf("Aucun form_code pour %s: %v", ec.Fiche.Name, err)
-    } else {
-        ec.Code = fc
-    }
+	// Charger le form_code si existant
+	codePath := filepath.Join("config", "form_codes", ec.Fiche.Name+"_code.yaml")
+	if fc, err := form_codes.LoadFormCode(codePath); err != nil {
+		log.Printf("Aucun form_code pour %s: %v", ec.Fiche.Name, err)
+	} else {
+		ec.Code = fc
+	}
 
-    return ec, nil
+	return ec, nil
 }

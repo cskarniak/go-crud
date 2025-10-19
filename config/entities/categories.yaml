@@ -90,3 +90,26 @@ forms:
         submitCreate: "Créer"
         submitUpdate: "Enregistrer"
         cancel: "Annuler"
+
+  # --- NOUVEAU FORMULAIRE VISION ---
+  - name: "subCategoriesVisu"
+    type: "vision"
+    config:
+      sql: |
+        SELECT id, libelle, date_maj
+        FROM categories
+        WHERE pod = :parent_id
+      params:
+        - name: "parent_id"
+          source: "context"
+          contextField: "id" # Le nom du paramètre dans l'URL
+      actions:
+        allowCreate: false
+        allowUpdate: true
+        allowDelete: false
+      columns: ["id", "libelle", "date_maj"]
+      labels:
+        title: "Sous-catégories"
+      pageSize: 5
+      defaultSortField: "libelle"
+      defaultSortOrder: "asc"

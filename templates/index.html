@@ -6,7 +6,9 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/css/style.css" rel="stylesheet">
   <link href="/assets/css/list/list.css" rel="stylesheet">
+  {{ if .Entity.List.Name }}
   <link href="/assets/css/list/{{ .Entity.List.Name }}-overrides.css" rel="stylesheet">
+  {{ end }}
 </head>
 <body>
 
@@ -14,19 +16,31 @@
     <div class="card shadow-sm">
       <div class="card-header bg-primary text-white">
         <h2 class="mb-0">
-          {{ with index .Entity.List.Labels "title" }}
-            {{ . }}
-          {{ else }}
-            {{ .Entity.LabelPlural }}
-          {{ end }}
+          {{- /* Le titre vient de la config Vision si elle existe, sinon de la config List */ -}}
+          {{- if .VisionConfig -}}
+            {{- with index .VisionConfig.Labels "title" }}{{ . }}{{ else }}{{ .Entity.LabelPlural }}{{ end -}}
+          {{- else -}}
+            {{- with index .Entity.List.Labels "title" }}{{ . }}{{ else }}{{ .Entity.LabelPlural }}{{ end -}}
+          {{- end -}}
         </h2>
       </div>
       <div class="card-body">
 
         <form method="get" class="toolbar mb-3">
           <button type="button" class="btn btn-secondary">Menu</button>
-          <a href="/{{ .Entity.Fiche.Name }}/new?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}" class="btn btn-success">Nouveau</a>
+          
+          {{- /* Définir les permissions par défaut (tout autoriser pour la liste standard) */ -}}
+          {{- $allowCreate := true -}}
+          {{- if .VisionConfig -}}
+            {{- $allowCreate = .VisionConfig.Actions.AllowCreate -}}
+          {{- end -}}
 
+          {{- if $allowCreate -}}
+          <a href="/{{ .Entity.Fiche.Name }}/new?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}" class="btn btn-success">Nouveau</a>
+          {{- end -}}
+
+          {{- /* La barre de recherche n'est affichée que pour les listes standard */ -}}
+          {{- if not .VisionConfig }}
           <div class="ms-auto d-flex align-items-center gap-2">
             <label class="mb-0">Afficher</label>
             <select name="pageSize" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
@@ -42,6 +56,7 @@
             <button type="submit" class="btn btn-primary btn-sm">Go</button>
             <a href="?page=1&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}" class="btn btn-outline-secondary btn-sm">Clear</a>
           </div>
+          {{- end }}
         </form>
 
         <div class="table-responsive">
@@ -60,6 +75,14 @@
               </tr>
             </thead>
             <tbody>
+              {{- /* Définir les permissions pour les lignes (par défaut à true) */ -}}
+              {{- $allowUpdate := true -}}
+              {{- $allowDelete := true -}}
+              {{- if .VisionConfig -}}
+                {{- $allowUpdate = .VisionConfig.Actions.AllowUpdate -}}
+                {{- $allowDelete = .VisionConfig.Actions.AllowDelete -}}
+              {{- end -}}
+
               {{ range .Data }}
                 {{ $row := . }}
                 <tr {{ if index $row "_highlight" }}class="highlight-row"{{ end }}>
@@ -67,13 +90,17 @@
                     <td data-label="{{ . }}">{{ index $row . }}</td>
                   {{ end }}
                   <td>
+                    {{- if $allowUpdate -}}
                     <a href="/{{ $.Entity.Fiche.Name }}/edit/{{ index $row "id" }}?page={{ $.Page }}&pageSize={{ $.PageSize }}&sort={{ $.SortField }}&order={{ $.SortOrder }}" class="btn btn-sm btn-primary me-1">Éditer</a>
+                    {{- end -}}
+                    {{- if $allowDelete -}}
                     <button type="button" class="btn btn-sm btn-danger"
                             data-bs-toggle="modal"
                             data-bs-target="#confirmDeleteModal"
                             data-delete-url="/{{ $.Entity.Fiche.Name }}/delete/{{ index $row "id" }}">
                       Supprimer
                     </button>
+                    {{- end -}}
                   </td>
                 </tr>
               {{ end }}

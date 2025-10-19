@@ -2,6 +2,7 @@
 package crud
 
 import (
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -21,29 +22,88 @@ type crudHandler struct {
 
 // RegisterEntity configure les routes CRUD pour une entité en utilisant le crudHandler.
 func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
-	// On crée une instance de notre handler qui contient la DB et la config.
 	h := &crudHandler{db: db, ec: ec}
 
-	listPrefix := "/" + ec.List.Name
-	entityPrefix := "/" + ec.Name
-	fichePrefix := "/" + ec.Fiche.Name
+	// Routes standard (liste, fiche)
+	r.GET("/"+ec.List.Name, h.list)
+	r.GET("/"+ec.Name, h.redirectToList)
+	r.GET("/"+ec.Fiche.Name+"/new", h.newForm)
+	r.POST("/"+ec.Fiche.Name, h.create)
+	r.GET("/"+ec.Fiche.Name+"/edit/:id", h.editForm)
+	r.POST("/"+ec.Fiche.Name+"/update/:id", h.update)
+	r.POST("/"+ec.Fiche.Name+"/delete/:id", h.delete)
+	r.GET("/"+ec.Fiche.Name+"/vision-data/:field", h.visionData)
 
-	// On attache les méthodes du handler aux routes.
-	r.GET(listPrefix, h.list)
-	r.GET(entityPrefix, h.redirectToList) // Alias /<entity> -> /<entity>_list
-
-	r.GET(fichePrefix+"/new", h.newForm)
-	r.POST(fichePrefix, h.create)
-
-	r.GET(fichePrefix+"/edit/:id", h.editForm)
-	r.POST(fichePrefix+"/update/:id", h.update)
-
-	r.POST(fichePrefix+"/delete/:id", h.delete)
-
-	r.GET(fichePrefix+"/vision-data/:field", h.visionData)
+	// NOUVEAU : Enregistrer les routes pour les formulaires 'vision'
+	for name := range ec.VisionForms {
+		// On crée une route spécifique pour chaque formulaire vision, ex: /vision/nom_du_formulaire
+		r.GET("/vision/"+name, h.vision)
+	}
 }
 
-// --- Handlers (Méthodes attachées à crudHandler) ---
+// --- Handlers ---
+
+// vision est le NOUVEAU handler pour les formulaires de type 'vision'.
+func (h *crudHandler) vision(c *gin.Context) {
+	// 1. Extraire le nom du formulaire vision de l'URL
+	visionName := strings.TrimPrefix(c.FullPath(), "/vision/")
+
+	// 2. Récupérer la configuration du formulaire vision
+	visionCfg, ok := h.ec.VisionForms[visionName]
+	if !ok {
+		c.String(http.StatusNotFound, "Formulaire 'vision' non trouvé: %s", visionName)
+		return
+	}
+
+	// 3. Préparer les paramètres pour la requête SQL
+	var args []interface{}
+	for _, param := range visionCfg.Params {
+		var value string
+		if param.Source == "context" {
+			value = c.Query(param.ContextField) // Le paramètre vient de l'URL (?parent_id=1)
+		} else if param.Source == "literal" {
+			value = param.Value // Le paramètre est une valeur fixe
+		}
+		args = append(args, sql.Named(param.Name, value))
+	}
+
+	// 4. Pagination et tri (similaire au handler 'list')
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	pageSize := visionCfg.PageSize
+	if ps, err := strconv.Atoi(c.Query("pageSize")); err == nil && ps > 0 {
+		pageSize = ps
+	}
+	if pageSize == 0 { pageSize = 10 } // Sécurité
+
+	sortField := c.DefaultQuery("sort", visionCfg.DefaultSortField)
+	sortOrder := c.DefaultQuery("order", visionCfg.DefaultSortOrder)
+
+	// 5. Exécuter la requête SQL
+	var data []map[string]interface{}
+	// TODO: Ajouter une vraie pagination pour les requêtes vision.
+	query := h.db.Raw(visionCfg.SQL, args...)
+	if err := query.Scan(&data).Error; err != nil {
+		c.String(http.StatusInternalServerError, "Erreur lors de l'exécution de la requête vision: %v", err)
+		return
+	}
+
+	// 6. Rendre le template index.html avec les données et la config vision
+	c.HTML(http.StatusOK, "index.html", gin.H{
+		"Entity":          h.ec,
+		"VisionConfig":    visionCfg, // On passe la config vision au template
+		"Columns":         visionCfg.Columns,
+		"Data":            data,
+		"Page":            page,
+		"PageSize":        pageSize,
+		"PageSizeOptions": visionCfg.PageSizeOptions,
+		"SortField":       sortField,
+		"SortOrder":       sortOrder,
+		"Search":          "", // La recherche n'est pas gérée pour les visions pour l'instant
+		"Total":           len(data), // Approximation, pas de vraie pagination
+		"TotalPages":      1,         // Approximation
+	})
+}
+
 
 // list gère l'affichage de la liste paginée, triée et filtrée.
 func (h *crudHandler) list(c *gin.Context) {
