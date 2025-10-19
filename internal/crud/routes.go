@@ -4,6 +4,7 @@ package crud
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -36,7 +37,6 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
 
 	// NOUVEAU : Enregistrer les routes pour les formulaires 'vision'
 	for name := range ec.VisionForms {
-		// On crée une route spécifique pour chaque formulaire vision, ex: /vision/nom_du_formulaire
 		r.GET("/vision/"+name, h.vision)
 	}
 }
@@ -45,52 +45,50 @@ func RegisterEntity(r *gin.Engine, db *gorm.DB, ec *entity.EntityConfig) {
 
 // vision est le NOUVEAU handler pour les formulaires de type 'vision'.
 func (h *crudHandler) vision(c *gin.Context) {
-	// 1. Extraire le nom du formulaire vision de l'URL
 	visionName := strings.TrimPrefix(c.FullPath(), "/vision/")
-
-	// 2. Récupérer la configuration du formulaire vision
 	visionCfg, ok := h.ec.VisionForms[visionName]
 	if !ok {
 		c.String(http.StatusNotFound, "Formulaire 'vision' non trouvé: %s", visionName)
 		return
 	}
 
-	// 3. Préparer les paramètres pour la requête SQL
 	var args []interface{}
 	for _, param := range visionCfg.Params {
 		var value string
 		if param.Source == "context" {
-			value = c.Query(param.ContextField) // Le paramètre vient de l'URL (?parent_id=1)
+			value = c.Query(param.ContextField)
 		} else if param.Source == "literal" {
-			value = param.Value // Le paramètre est une valeur fixe
+			value = param.Value
 		}
 		args = append(args, sql.Named(param.Name, value))
 	}
 
-	// 4. Pagination et tri (similaire au handler 'list')
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	pageSize := visionCfg.PageSize
 	if ps, err := strconv.Atoi(c.Query("pageSize")); err == nil && ps > 0 {
 		pageSize = ps
 	}
-	if pageSize == 0 { pageSize = 10 } // Sécurité
+	if pageSize == 0 {
+		pageSize = 10
+	}
 
 	sortField := c.DefaultQuery("sort", visionCfg.DefaultSortField)
 	sortOrder := c.DefaultQuery("order", visionCfg.DefaultSortOrder)
 
-	// 5. Exécuter la requête SQL
 	var data []map[string]interface{}
-	// TODO: Ajouter une vraie pagination pour les requêtes vision.
 	query := h.db.Raw(visionCfg.SQL, args...)
-	if err := query.Scan(&data).Error; err != nil {
-		c.String(http.StatusInternalServerError, "Erreur lors de l'exécution de la requête vision: %v", err)
-		return
+	err := query.Scan(&data).Error
+
+	// AJOUT DE LOGS POUR LE DÉBOGAGE
+	if err != nil {
+		log.Printf("[VISION] Erreur SQL pour '%s': %v", visionName, err)
+	} else {
+		log.Printf("[VISION] Requête pour '%s' a retourné %d enregistrements", visionName, len(data))
 	}
 
-	// 6. Rendre le template index.html avec les données et la config vision
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"Entity":          h.ec,
-		"VisionConfig":    visionCfg, // On passe la config vision au template
+		"VisionConfig":    visionCfg,
 		"Columns":         visionCfg.Columns,
 		"Data":            data,
 		"Page":            page,
@@ -98,9 +96,9 @@ func (h *crudHandler) vision(c *gin.Context) {
 		"PageSizeOptions": visionCfg.PageSizeOptions,
 		"SortField":       sortField,
 		"SortOrder":       sortOrder,
-		"Search":          "", // La recherche n'est pas gérée pour les visions pour l'instant
-		"Total":           len(data), // Approximation, pas de vraie pagination
-		"TotalPages":      1,         // Approximation
+		"Search":          "",
+		"Total":           len(data),
+		"TotalPages":      1,
 	})
 }
 

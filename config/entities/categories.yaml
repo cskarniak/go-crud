@@ -91,7 +91,7 @@ forms:
         submitUpdate: "Enregistrer"
         cancel: "Annuler"
 
-  # --- NOUVEAU FORMULAIRE VISION ---
+  # --- FORMULAIRE VISION AVEC PARAMÈTRE DYNAMIQUE ---
   - name: "subCategoriesVisu"
     type: "vision"
     config:
@@ -102,7 +102,7 @@ forms:
       params:
         - name: "parent_id"
           source: "context"
-          contextField: "id" # Le nom du paramètre dans l'URL
+          contextField: "id" # Le nom du paramètre à lire dans l'URL (ex: ?id=1)
       actions:
         allowCreate: false
         allowUpdate: true
