@@ -50,7 +50,7 @@ func main() {
 
 		// On définit ensuite les routes du groupe
 		adminRoutes.GET("/settings", admin.GetSettingsHandler(cfg))
-		adminRoutes.POST("/settings", admin.PostSettingsHandler())
+		adminRoutes.POST("/settings", admin.PostSettingsHandler(cfg)) // Correction ici
 	}
 
 	// 4) Redirection racine vers la première entité

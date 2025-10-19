@@ -371,7 +371,7 @@ func (h *crudHandler) repopulateFormOnError(c *gin.Context, mode string, errors 
 // visionData fournit les données JSON pour les popups de type 'vision'.
 func (h *crudHandler) visionData(c *gin.Context) {
 	fieldName := c.Param("field")
-	var vc *entity.VisionConfig
+	var vc *entity.VisionFieldConfig
 	for _, grp := range h.ec.Fiche.Groups {
 		for _, fd := range grp.Fields {
 			if fd.Name == fieldName && fd.VisionConfig != nil {

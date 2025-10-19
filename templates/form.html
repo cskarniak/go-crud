@@ -52,7 +52,7 @@
 
                   {{ if eq $fd.Type "combo_base" }}
                     <!-- combo_base input -->
-                    <select id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-select{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" {{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ end }}>
+                    <select id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-select{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" {{ if $.Code }}{{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ end }}{{ end }}>
                       {{ range $opt := index $.ComboData $fd.Name }}
                         <option value="{{ $opt.Value }}" {{ if eq (printf "%v" $opt.Value) (printf "%v" (index $.DataRow $fd.Name)) }} selected{{ end }}>{{ $opt.Label }}</option>
                       {{ end }}
@@ -126,7 +126,7 @@
                     </script>
 
                   {{ else }}
-                    <input type="text" id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $fd.Name }}" {{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}{{ end }}>
+                    <input type="text" id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $fd.Name }}" {{ if $.Code }}{{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}{{ end }}{{ end }}>
                   {{ end }}
 
                   {{ with index $.Errors $fd.Name }}<div class="invalid-feedback">{{ . }}</div>{{ end }}

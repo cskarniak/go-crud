@@ -22,16 +22,10 @@ func GetSettingsHandler(cfg *config.Config) gin.HandlerFunc {
 	}
 }
 
-// PostSettingsHandler traite la soumission du formulaire et met à jour le fichier YAML.
-func PostSettingsHandler() gin.HandlerFunc {
+// PostSettingsHandler traite la soumission du formulaire et met à jour la configuration.
+func PostSettingsHandler(cfg *config.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		cfg, err := config.Load("config/config.yaml")
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Erreur : impossible de charger la configuration existante.")
-			return
-		}
-
-		// Mise à jour de la struct avec les données du formulaire
+		// Mise à jour de la struct de configuration en mémoire
 		cfg.Server.Port = c.PostForm("port")
 		cfg.Database.Directory = c.PostForm("db_directory")
 		cfg.Database.Name = c.PostForm("db_name")
@@ -54,6 +48,7 @@ func PostSettingsHandler() gin.HandlerFunc {
 		}
 
 		log.Println("Fichier config.yaml mis à jour avec succès.")
+		// Redirection pour que le navigateur recharge la page avec les nouvelles valeurs
 		c.Redirect(http.StatusFound, "/admin/settings")
 	}
 }

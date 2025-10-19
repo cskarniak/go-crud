@@ -73,7 +73,8 @@
 /* -------- Largeurs de colonnes -------- */
 .table-fixed th:nth-child(1), .table-fixed td:nth-child(1) { width: 50px; text-align: left; }
 .table-fixed th:nth-child(2), .table-fixed td:nth-child(2) { width: 150px; text-align: left; }
-.table-fixed th:nth-child(3), .table-fixed td:nth-child(3) { width: 50px; text-align: center; }
+/* Suppression de la règle nth-child(3) et ajout d'une règle pour la dernière colonne */
+.table-fixed th:last-child, .table-fixed td:last-child { width: 120px; text-align: center; }
 
 /* -------- Conteneur responsive du tableau -------- */
 .table-responsive {

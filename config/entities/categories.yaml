@@ -21,9 +21,8 @@ fields:
     type: "date"
     label:  "Date MAJ"
     required: true
-    # 1) Déclaration du combo_base
   - name: "pod"
-    type: "combo_base"
+    type: "uint"
     label: "Pod"
     required: false
     default: null
@@ -33,8 +32,6 @@ fields:
     required: False
     default: null
     readonly: false
-  
-  # … ajoutez ici toutes les colonnes issues de votre schéma …
 
 forms:
   - name: "categorieList"
@@ -44,10 +41,10 @@ forms:
       pageSize: 10   
       defaultSortField: "id"
       defaultSortOrder: "asc"
-      pageSizeOptions: [5,10,25,50]
-      columns: ["id","libelle"]
-      searchableFields: ["id","libelle"]
-      sortableFields: ["id","libelle"]
+      pageSizeOptions: [5, 10, 25, 50]
+      columns: ["id", "libelle"]
+      searchableFields: ["id", "libelle"]
+      sortableFields: ["id", "libelle"]
       labels:
         title: "Liste des catégories"
 
