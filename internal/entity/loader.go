@@ -40,9 +40,10 @@ type VisionParamConfig struct {
 
 // VisionActionsConfig définit les actions autorisées sur un formulaire 'vision'.
 type VisionActionsConfig struct {
-	AllowCreate bool `yaml:"allowCreate"`
-	AllowUpdate bool `yaml:"allowUpdate"`
-	AllowDelete bool `yaml:"allowDelete"`
+	AllowCreate     bool  `yaml:"allowCreate"`
+	AllowUpdate     bool  `yaml:"allowUpdate"`
+	AllowDelete     bool  `yaml:"allowDelete"`
+	AllowSelectable *bool `yaml:"allowSelectable,omitempty"` // V29 - Pointeur pour gérer l'absence de valeur
 }
 
 // VisionFormConfig est la configuration pour un FORMULAIRE de type 'vision'.
@@ -68,6 +69,7 @@ type FieldDef struct {
 	Type         string
 	ComboConfig  *ComboFieldConfig
 	VisionConfig *VisionFieldConfig
+	VisionButton string `yaml:"visionButton,omitempty"` // V28 - Bouton pour ouvrir un formulaire vision
 }
 
 func (f *FieldDef) UnmarshalYAML(node *yaml.Node) error {
@@ -82,6 +84,14 @@ func (f *FieldDef) UnmarshalYAML(node *yaml.Node) error {
 	} else {
 		return fmt.Errorf("field entry missing 'name'")
 	}
+
+	// V28 - Décodage du bouton vision
+	if vb, ok := raw["visionButton"]; ok {
+		if err := vb.Decode(&f.VisionButton); err != nil {
+			return err
+		}
+	}
+
 	f.Type = "string"
 	if t, ok := raw["type"]; ok {
 		if err := t.Decode(&f.Type); err != nil {
@@ -115,15 +125,15 @@ type FicheConfig struct {
 
 // ListConfig configuration pour la liste
 type ListConfig struct {
-	Name             string
-	PageSize         int
-	DefaultSortField string
-	DefaultSortOrder string
-	PageSizeOptions  []int
-	Columns          []string
-	SearchableFields []string
-	SortableFields   []string
-	Labels           map[string]string
+	Name             string            `yaml:"name"`
+	PageSize         int               `yaml:"pageSize"`
+	DefaultSortField string            `yaml:"defaultSortField"`
+	DefaultSortOrder string            `yaml:"defaultSortOrder"`
+	PageSizeOptions  []int             `yaml:"pageSizeOptions"`
+	Columns          []string          `yaml:"columns"`
+	SearchableFields []string          `yaml:"searchableFields"`
+	SortableFields   []string          `yaml:"sortableFields"`
+	Labels           map[string]string `yaml:"labels"`
 }
 
 // Field décrit un champ d'entité stocké en base
@@ -240,11 +250,15 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 	}
 
 	// Valeurs par défaut génériques
-	if ec.DefaultPageSize == 0 {
-		ec.DefaultPageSize = 10
+	if ec.List.PageSize == 0 {
+		if ec.DefaultPageSize != 0 {
+			ec.List.PageSize = ec.DefaultPageSize
+		} else {
+			ec.List.PageSize = 10
+		}
 	}
 	if ec.List.DefaultSortField == "" && len(ec.Fields) > 0 {
-		ec.List.DefaultSortField = ec.Fields[0].Name
+			ec.List.DefaultSortField = ec.Fields[0].Name
 	}
 	if ec.List.DefaultSortOrder == "" {
 		ec.List.DefaultSortOrder = "asc"

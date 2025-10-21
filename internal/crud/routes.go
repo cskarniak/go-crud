@@ -56,6 +56,7 @@ func (h *crudHandler) vision(c *gin.Context) {
 	for _, param := range visionCfg.Params {
 		var value string
 		if param.Source == "context" {
+			// Le nom du champ est maintenant dynamique, basé sur ce que le bouton envoie.
 			value = c.Query(param.ContextField)
 		} else if param.Source == "literal" {
 			value = param.Value
@@ -79,16 +80,27 @@ func (h *crudHandler) vision(c *gin.Context) {
 	query := h.db.Raw(visionCfg.SQL, args...)
 	err := query.Scan(&data).Error
 
-	// AJOUT DE LOGS POUR LE DÉBOGAGE
 	if err != nil {
 		log.Printf("[VISION] Erreur SQL pour '%s': %v", visionName, err)
 	} else {
 		log.Printf("[VISION] Requête pour '%s' a retourné %d enregistrements", visionName, len(data))
 	}
 
+	// V29 - Logique pour le mode sélectionnable
+	allowSelectable := true // Par défaut, la sélection est autorisée
+	if visionCfg.Actions.AllowSelectable != nil {
+		allowSelectable = *visionCfg.Actions.AllowSelectable
+	}
+
+	isVisionReturn := c.Query("return_to") != ""
+	returnTo := c.Query("return_to")
+
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"Entity":          h.ec,
 		"VisionConfig":    visionCfg,
+		"IsVisionReturn":  isVisionReturn,
+		"ReturnTo":        returnTo,
+		"AllowSelectable": allowSelectable, // On passe la valeur au template
 		"Columns":         visionCfg.Columns,
 		"Data":            data,
 		"Page":            page,
@@ -151,7 +163,14 @@ func (h *crudHandler) list(c *gin.Context) {
 
 	var total int64
 	countQ.Count(&total)
-	totalPages := int((total + int64(pageSize) - 1) / int64(pageSize))
+
+	// Correction du bug de division par zéro (Force Write)
+	var totalPages int
+	if pageSize > 0 {
+		totalPages = int((total + int64(pageSize) - 1) / int64(pageSize))
+	} else {
+		totalPages = 0 // Évite le plantage si pageSize est 0
+	}
 
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"Entity":          h.ec,

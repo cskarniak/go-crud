@@ -32,6 +32,12 @@ fields:
     required: False
     default: null
     readonly: false
+  - name: "podvision"
+    type: "uint"
+    label: "podvision"
+    required: False
+    default: null
+    readonly: false
 
 forms:
   - name: "categorieList"
@@ -83,7 +89,9 @@ forms:
               - id
               - libelle   
             returnField: id                # colonne qu’on renvoie dans client_id
-            modalTitle: "Sélectionner une catégorie"  
+            modalTitle: "Sélectionner une catégorie"
+          - name: "podvision"
+            visionButton: "subCategoriesVisu" # V28 - Ajout d'un bouton vision
       labels:
         titleCreate: "Création d’une catégorie"
         titleUpdate: "Édition d’une catégorie"
@@ -102,14 +110,15 @@ forms:
       params:
         - name: "parent_id"
           source: "context"
-          contextField: "id" # Le nom du paramètre à lire dans l'URL (ex: ?id=1)
+          contextField: "podvision"
       actions:
         allowCreate: false
         allowUpdate: true
         allowDelete: false
+        allowSelectable: true # V29 - On désactive le mode sélection pour ce formulaire
       columns: ["id", "libelle", "date_maj"]
       labels:
-        title: "Sous-catégories"
+        title: "Sous-catégories (Consultation)"
       pageSize: 5
       defaultSortField: "libelle"
       defaultSortOrder: "asc"

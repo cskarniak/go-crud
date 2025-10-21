@@ -126,7 +126,20 @@
                     </script>
 
                   {{ else }}
-                    <input type="text" id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $fd.Name }}" {{ if $.Code }}{{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}{{ end }}{{ end }}>
+                    {{/* V28 - Input group pour potentiellement ajouter un bouton vision */}}
+                    <div class="input-group">
+                      <input type="text" id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $fd.Name }}" {{ if $.Code }}{{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}{{ end }}{{ end }}>
+                      
+                      {{/* V28 - Ajout du bouton si configuré dans le YAML */}}
+                      {{ if $fd.VisionButton }}
+                        <button class="btn btn-outline-secondary vision-button" 
+                                type="button"
+                                data-vision-form="{{ $fd.VisionButton }}"
+                                data-field-name="{{ $fd.Name }}">
+                          👁️
+                        </button>
+                      {{ end }}
+                    </div>
                   {{ end }}
 
                   {{ with index $.Errors $fd.Name }}<div class="invalid-feedback">{{ . }}</div>{{ end }}
@@ -147,5 +160,37 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+  {{/* V28 - Script pour gérer les boutons vision */}}
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      const visionButtons = document.querySelectorAll('.vision-button');
+
+      visionButtons.forEach(button => {
+        button.addEventListener('click', function() {
+          const formName = this.dataset.visionForm;
+          const fieldName = this.dataset.fieldName;
+          const inputElement = document.getElementById(fieldName);
+
+          if (!inputElement) {
+            console.error('Champ de formulaire associé non trouvé pour le bouton vision :', fieldName);
+            return;
+          }
+
+          const fieldValue = inputElement.value;
+
+          if (!fieldValue) {
+            alert("Veuillez d'abord saisir une valeur dans le champ.");
+            return;
+          }
+
+          // Ajout du paramètre `return_to` pour indiquer au popup quel champ mettre à jour.
+          const url = `/vision/${formName}?${fieldName}=${encodeURIComponent(fieldValue)}&return_to=${fieldName}`;
+
+          window.open(url, '_blank');
+        });
+      });
+    });
+  </script>
 </body>
 </html>

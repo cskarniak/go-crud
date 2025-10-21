@@ -39,6 +39,11 @@
           <a href="/{{ .Entity.Fiche.Name }}/new?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}" class="btn btn-success">Nouveau</a>
           {{- end -}}
 
+          {{- /* V29 - Bouton de retour pour les fenêtres vision */ -}}
+          {{ if .VisionConfig }}
+            <button type="button" id="vision-close-btn" class="btn btn-warning ms-2">Retour</button>
+          {{ end }}
+
           {{- /* La barre de recherche n'est affichée que pour les listes standard */ -}}
           {{- if not .VisionConfig }}
           <div class="ms-auto d-flex align-items-center gap-2">
@@ -85,7 +90,7 @@
 
               {{ range .Data }}
                 {{ $row := . }}
-                <tr {{ if index $row "_highlight" }}class="highlight-row"{{ end }}>
+                <tr data-id="{{ index $row "id" }}" class="{{ if and $.IsVisionReturn $.AllowSelectable }}vision-return-row{{ end }} {{ if index $row "_highlight" }}highlight-row{{ end }}">
                   {{ range $.Columns }}
                     <td data-label="{{ . }}">{{ index $row . }}</td>
                   {{ end }}
@@ -149,15 +154,54 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
   <script>
-    const confirmDeleteModal = document.getElementById('confirmDeleteModal');
-    if (confirmDeleteModal) {
-      confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
-        const button = event.relatedTarget;
-        const deleteUrl = button.getAttribute('data-delete-url');
-        const deleteForm = confirmDeleteModal.querySelector('#deleteForm');
-        deleteForm.setAttribute('action', deleteUrl);
-      });
-    }
+    document.addEventListener('DOMContentLoaded', function() {
+      // Logique pour la confirmation de suppression
+      const confirmDeleteModal = document.getElementById('confirmDeleteModal');
+      if (confirmDeleteModal) {
+        confirmDeleteModal.addEventListener('show.bs.modal', function (event) {
+          const button = event.relatedTarget;
+          const deleteUrl = button.getAttribute('data-delete-url');
+          const deleteForm = confirmDeleteModal.querySelector('#deleteForm');
+          deleteForm.setAttribute('action', deleteUrl);
+        });
+      }
+
+      // Logique pour le retour de valeur depuis une fenêtre vision
+      const isVisionReturn = {{ .IsVisionReturn }};
+      const allowSelectable = {{ .AllowSelectable }};
+
+      if (isVisionReturn && allowSelectable) {
+        const returnToField = '{{ .ReturnTo }}';
+        const rows = document.querySelectorAll('.vision-return-row');
+
+        rows.forEach(row => {
+          row.style.cursor = 'pointer';
+          row.addEventListener('click', function() {
+            const selectedId = this.dataset.id;
+
+            if (window.opener && !window.opener.closed) {
+              const targetInput = window.opener.document.getElementById(returnToField);
+              if (targetInput) {
+                targetInput.value = selectedId;
+                window.close();
+              } else {
+                alert('Erreur: Impossible de trouver le champ de destination.');
+              }
+            } else {
+              alert('Erreur: Impossible de trouver la fenêtre d\'origine.');
+            }
+          });
+        });
+      }
+
+      // V29 - Logique pour le bouton de retour/fermeture des fenêtres vision
+      const visionCloseBtn = document.getElementById('vision-close-btn');
+      if (visionCloseBtn) {
+        visionCloseBtn.addEventListener('click', function() {
+          window.close();
+        });
+      }
+    });
   </script>
 
 </body>
