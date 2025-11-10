@@ -1,0 +1,131 @@
+# config/entities/compte.yaml
+
+entity:
+  name: "compte"
+  table: "compte"
+  label: "Compte"
+  labelPlural: "Comptes"
+  defaultPageSize: 10
+
+fields:
+  - name: "id"
+    type: "uint"
+    label: "ID"
+    readonly: true
+  - name: "cpt_nom"
+    type: "string"
+    label: "Nom"
+  - name: "cpt_agence"
+    type: "uint"
+    label: "Code Agence"
+  - name: "cpt_guichet"
+    type: "uint"
+    label: "Code Guichet"
+  - name: "cpt_compte"
+    type: "uint"
+    label: "Numéro de Compte"
+  - name: "cpt_rib"
+    type: "uint"
+    label: "Clé RIB"
+  - name: "cpt_date_synchro"
+    type: "date"
+    label: "Date Synchro"
+  - name: "cpt_date_cloture"
+    type: "date"
+    label: "Date Clôture"
+  - name: "cpt_solde_cloture"
+    type: "number"
+    label: "Solde de Clôture"
+  - name: "cpt_date_rapprochement"
+    type: "date"
+    label: "Date Rapprochement"
+  - name: "cpt_reference_rapprochement"
+    type: "string"
+    label: "Réf. Rapprochement"
+  - name: "cpt_solde_depart_rapprochement"
+    type: "number"
+    label: "Solde Départ Rappro."
+  - name: "cpt_solde_final_rapprochement"
+    type: "number"
+    label: "Solde Final Rappro."
+  - name: "cpt_rapprochementencours"
+    type: "boolean"
+    label: "Rapprochement en cours"
+  - name: "cpt_reference_dernierreleve"
+    type: "string"
+    label: "Réf. Dernier Relevé"
+  - name: "cpt_ferme"
+    type: "boolean"
+    label: "Fermé"
+  - name: "cpt_commentaire"
+    type: "string"
+    label: "Commentaire"
+  - name: "cpt_url_site"
+    type: "string"
+    label: "URL Site Banque"
+  - name: "cpt_identifiant"
+    type: "string"
+    label: "Identifiant"
+  - name: "cpt_solde_calcule"
+    type: "number"
+    label: "Solde Calculé"
+  - name: "cpt_comptegerepourautrui"
+    type: "boolean"
+    label: "Compte pour autrui"
+
+forms:
+  - name: "compteList"
+    type: "list"
+    entity: "compte"
+    config:
+      pageSize: 10
+      defaultSortField: "id"
+      defaultSortOrder: "asc"
+      pageSizeOptions: [5, 10, 25, 50]
+      columns: ["id", "cpt_nom"]
+      searchableFields: ["id", "cpt_nom"]
+      sortableFields: ["id", "cpt_nom"]
+      labels:
+        title: "Liste des comptes"
+
+  - name: "compteFiche"
+    type: "fiche"
+    entity: "compte"
+    config:
+      groups:
+        - name: "Informations Principales"
+          fields:
+            - name: "id"
+            - name: "cpt_nom"
+            - name: "cpt_commentaire"
+        - name: "Détails Bancaires"
+          fields:
+            - name: "cpt_agence"
+            - name: "cpt_guichet"
+            - name: "cpt_compte"
+            - name: "cpt_rib"
+        - name: "Accès en ligne"
+          fields:
+            - name: "cpt_url_site"
+            - name: "cpt_identifiant"
+        - name: "Rapprochement"
+          fields:
+            - name: "cpt_date_rapprochement"
+            - name: "cpt_reference_rapprochement"
+            - name: "cpt_solde_depart_rapprochement"
+            - name: "cpt_solde_final_rapprochement"
+            - name: "cpt_rapprochementencours"
+        - name: "État"
+          fields:
+            - name: "cpt_date_synchro"
+            - name: "cpt_solde_calcule"
+            - name: "cpt_ferme"
+            - name: "cpt_date_cloture"
+            - name: "cpt_solde_cloture"
+            - name: "cpt_comptegerepourautrui"
+      labels:
+        titleCreate: "Création d’un compte"
+        titleUpdate: "Édition d’un compte"
+        submitCreate: "Créer"
+        submitUpdate: "Enregistrer"
+        cancel: "Annuler"

@@ -1,0 +1,27 @@
+# config/form_codes/compte_code.yaml
+
+form: compteFiche
+
+# 1) Pré-remplissage (avant affichage du form)
+
+
+# 2) Règles de validation front (pour HTML5 / JS)
+front_validations:
+  cpt_nom:
+    required: true
+    # Correction: Remplacement de l’apostrophe typographique ’ par une apostrophe standard '.
+    pattern: "^[A-Za-z0-9 éèêàç',.-]{3,100}$"
+    title: "Le nom doit comporter entre 3 et 100 caractères alphanumériques."
+    
+# 3) Règles de validation back (pour Gin+validator)
+back_validations:
+  cpt_nom:
+    required: true
+    required_message: "Le champ « Nom » est obligatoire."
+    min: 3
+    min_message: "Le champ « Nom » doit contenir au moins 3 caractères."
+    max: 100
+    max_message: "Le champ « Nom » ne peut pas dépasser 100 caractères."
+  date_maj:
+    required: true
+    required_message: "La date de mise à jour est requise."

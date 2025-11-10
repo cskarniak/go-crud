@@ -344,44 +344,61 @@ func (h *crudHandler) bindAndConvertForm(c *gin.Context) map[string]interface{} 
 	for _, grp := range h.ec.Fiche.Groups {
 		for _, fd := range grp.Fields {
 			// Ignorer les champs readonly et l'ID
-			if fd.Name == "id" { continue }
+			if fd.Name == "id" {
+				continue
+			}
 			var isReadOnly bool
+			var fieldType string
 			for _, f := range h.ec.Fields {
-				if f.Name == fd.Name && f.ReadOnly {
-					isReadOnly = true
+				if f.Name == fd.Name {
+					isReadOnly = f.ReadOnly
+					fieldType = f.Type
 					break
 				}
 			}
-			if isReadOnly { continue }
+			if isReadOnly {
+				continue
+			}
 
 			raw := c.PostForm(fd.Name)
 			var finalValue interface{}
 
-			// Cas spécial pour les champs vides : on veut `nil` pour insérer `NULL`.
+			// Cas spécial pour les champs vides ou non envoyés (checkboxes)
 			if raw == "" {
-				finalValue = nil
+				if fieldType == "boolean" {
+					finalValue = false // Une checkbox non cochée n'est pas envoyée, donc sa valeur est 'false'
+				} else {
+					finalValue = nil // Pour les autres types, une chaîne vide devient NULL
+				}
 			} else {
 				// On ne fait la conversion que si la valeur n'est pas vide.
 				isSpecialType := fd.ComboConfig != nil || fd.VisionConfig != nil
 				if isSpecialType {
 					finalValue = raw
 				} else {
-					for _, f := range h.ec.Fields {
-						if f.Name == fd.Name {
-							switch f.Type {
-							case "uint", "int", "number":
-								if i, err := strconv.Atoi(raw); err == nil {
-									finalValue = i
-								}
-							case "date":
-								if t, err := time.Parse("2006-01-02", raw); err == nil {
-									finalValue = t
-								}
-							default:
-								finalValue = raw
-							}
-							break
+					switch fieldType {
+					case "uint", "int":
+						if i, err := strconv.Atoi(raw); err == nil {
+							finalValue = i
 						}
+					case "number":
+						cleanRaw := strings.Replace(raw, ",", ".", -1)
+						if f, err := strconv.ParseFloat(cleanRaw, 64); err == nil {
+							finalValue = f
+						}
+					case "boolean":
+						// Géré par la valeur "on" que les navigateurs envoient pour les checkboxes cochées
+						if raw == "on" || raw == "true" || raw == "1" {
+							finalValue = true
+						} else {
+							finalValue = false
+						}
+					case "date":
+						if t, err := time.Parse("2006-01-02", raw); err == nil {
+							finalValue = t
+						}
+					default:
+						finalValue = raw
 					}
 				}
 			}
