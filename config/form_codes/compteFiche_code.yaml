@@ -22,6 +22,4 @@ back_validations:
     min_message: "Le champ « Nom » doit contenir au moins 3 caractères."
     max: 100
     max_message: "Le champ « Nom » ne peut pas dépasser 100 caractères."
-  date_maj:
-    required: true
-    required_message: "La date de mise à jour est requise."
+

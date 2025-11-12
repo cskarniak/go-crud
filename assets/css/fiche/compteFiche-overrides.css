@@ -1,0 +1,21 @@
+/* assets/css/fiche/compteFiche-overrides.css */
+
+/* =====================================================
+   BLOC DE CONFIGURATION SPÉCIFIQUE À LA FICHE COMPTE
+===================================================== */
+:root {
+  --form-compte-bg-color: #d1cece;
+  --form-compte-border-color: #dee2e6;
+  --form-compte-shadow-color: rgba(0, 0, 0, 0.05);
+}
+/* ===================================================== */
+
+form {
+  background-color: var(--form-compte-bg-color);
+  border: 1px solid var(--form-compte-border-color);
+  box-shadow: 0 2px 6px var(--form-compte-shadow-color);
+  
+  /* Les autres propriétés (padding, border-radius) ne changent pas */
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+}

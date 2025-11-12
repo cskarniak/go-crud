@@ -32,6 +32,15 @@
       </h5>
     </div>
     <div class="card-body">
+      <!-- Affichage des erreurs de validation -->
+      {{ if .Errors }}
+        <div class="alert alert-danger">
+          {{ range $field, $message := .Errors }}
+            <div>[{{ $field }}] : {{ $message }}</div>
+          {{ end }}
+        </div>
+      {{ end }}
+
       <form method="post" action='{{ if eq .Mode "new" }}
                   /{{ .Entity.Fiche.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
                 {{ else }}
@@ -43,109 +52,114 @@
             <legend>{{ .Name }}</legend>
 
             {{ range .Fields }}
-              {{ $fd := . }}
-              <div class="row mb-3 align-items-center">
-                <label for="{{ $fd.Name }}" class="col-sm-3 col-form-label fw-bold">
-                  {{ $fd.Name }}
-                </label>
-                <div class="col-sm-9">
+              {{ $formField := . }}
+              {{ range $.Entity.Fields }}
+                {{ if eq .Name $formField.Name }}
+                  {{ $fieldDef := . }}
 
-                  {{ if eq $fd.Type "combo_base" }}
-                    <!-- combo_base input -->
-                    <select id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-select{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" {{ if $.Code }}{{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ end }}{{ end }}>
-                      {{ range $opt := index $.ComboData $fd.Name }}
-                        <option value="{{ $opt.Value }}" {{ if eq (printf "%v" $opt.Value) (printf "%v" (index $.DataRow $fd.Name)) }} selected{{ end }}>{{ $opt.Label }}</option>
-                      {{ end }}
-                    </select>
+                  <div class="row mb-3 align-items-center">
+                    <label for="{{ $formField.Name }}" class="col-sm-3 col-form-label fw-bold">
+                      {{ $fieldDef.Label }}
+                    </label>
+                    <div class="col-sm-9">
 
-                  {{ else if eq $fd.Type "vision" }}
-                    <!-- vision input + modal -->
-                    <div class="d-flex">
-                      <input type="text" id="{{ $fd.Name }}" name="{{ $fd.Name }}" readonly class="form-control me-2{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $fd.Name }}">
-                      <button type="button" class="btn-clode btn-close-whiteoutline-primary" data-bs-toggle="modal" data-bs-target="#modal-{{ $fd.Name }}">…</button>
-                    </div>
+                      {{ if eq $formField.Type "combo_base" }}
+                        <!-- combo_base input -->
+                        <select id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="form-select{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" {{ if $fieldDef.ReadOnly }}disabled{{ end }} {{ if $.Code }}{{ with index $.Code.FrontValidations $formField.Name }}{{ if .Required }} required{{ end }}{{ end }}{{ end }}>
+                          {{ range $opt := index $.ComboData $formField.Name }}
+                            <option value="{{ $opt.Value }}" {{ if eq (printf "%v" $opt.Value) (printf "%v" (index $.DataRow $formField.Name)) }} selected{{ end }}>{{ $opt.Label }}</option>
+                          {{ end }}
+                        </select>
 
-                    <!-- Modal générique vision -->
-                    <div class="modal fade vision-modal" id="modal-{{ $fd.Name }}" tabindex="-1">
-                      <div class="modal-dialog">
-                        <div class="modal-content">
-                          <div class="modal-header">
-                            <h5 class="modal-title">{{ $fd.VisionConfig.ModalTitle }}</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                          </div>
-                          <div class="modal-body">
-                            <div class="mb-3">
-                              <input type="text" id="search-{{ $fd.Name }}" class="form-control" placeholder="Rechercher…">
+                      {{ else if eq $formField.Type "vision" }}
+                        <!-- vision input + modal -->
+                        <div class="d-flex">
+                          <input type="text" id="{{ $formField.Name }}" name="{{ $formField.Name }}" readonly class="form-control me-2{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $formField.Name }}">
+                          <button type="button" class="btn-clode btn-close-whiteoutline-primary" data-bs-toggle="modal" data-bs-target="#modal-{{ $formField.Name }}" {{ if $fieldDef.ReadOnly }}disabled{{ end }}>…</button>
+                        </div>
+
+                        <!-- Modal générique vision -->
+                        <div class="modal fade vision-modal" id="modal-{{ $formField.Name }}" tabindex="-1">
+                          <div class="modal-dialog">
+                            <div class="modal-content">
+                              <div class="modal-header">
+                                <h5 class="modal-title">{{ $formField.VisionConfig.ModalTitle }}</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                              </div>
+                              <div class="modal-body">
+                                <div class="mb-3">
+                                  <input type="text" id="search-{{ $formField.Name }}" class="form-control" placeholder="Rechercher…">
+                                </div>
+                                <table class="table table-hover" id="table-{{ $formField.Name }}">
+                                  <thead><tr>{{ range $col := $formField.VisionConfig.DisplayFields }}<th>{{ $col }}</th>{{ end }}</tr></thead>
+                                  <tbody></tbody>
+                                </table>
+                              </div>
                             </div>
-                            <table class="table table-hover" id="table-{{ $fd.Name }}">
-                              <thead><tr>{{ range $col := $fd.VisionConfig.DisplayFields }}<th>{{ $col }}</th>{{ end }}</tr></thead>
-                              <tbody></tbody>
-                            </table>
                           </div>
                         </div>
-                      </div>
-                    </div>
 
-                    <script>
-                    (function(){
-                      const modal = document.getElementById("modal-{{ $fd.Name }}");
-                      const displayFields = {{ marshal $fd.VisionConfig.DisplayFields }};
-                      const tbody = modal.querySelector("tbody");
-                      const searchInput = modal.querySelector("#search-{{ $fd.Name }}");
+                        <script>
+                        (function(){
+                          const modal = document.getElementById("modal-{{ $formField.Name }}");
+                          const displayFields = {{ marshal $formField.VisionConfig.DisplayFields }};
+                          const tbody = modal.querySelector("tbody");
+                          const searchInput = modal.querySelector("#search-{{ $formField.Name }}");
 
-                      function populateRows(rows) {
-                        tbody.innerHTML = "";
-                        rows.forEach(row => {
-                          const tr = document.createElement("tr");
-                          displayFields.forEach(col => {
-                            const td = document.createElement("td"); td.textContent = row[col] ?? ""; tr.appendChild(td);
+                          function populateRows(rows) {
+                            tbody.innerHTML = "";
+                            rows.forEach(row => {
+                              const tr = document.createElement("tr");
+                              displayFields.forEach(col => {
+                                const td = document.createElement("td"); td.textContent = row[col] ?? ""; tr.appendChild(td);
+                              });
+                              tr.style.cursor = "pointer";
+                              tr.onclick = () => { document.getElementById("{{ $formField.Name }}").value = row["{{ $formField.VisionConfig.ReturnField }}"]; bootstrap.Modal.getInstance(modal).hide(); };
+                              tbody.appendChild(tr);
+                            });
+                          }
+
+                          function filterRows(term) {
+                            const filter = term.trim().toLowerCase();
+                            tbody.querySelectorAll("tr").forEach(tr => {
+                              const text = Array.from(tr.cells).map(td => td.textContent.toLowerCase()).join(" ");
+                              tr.style.display = (filter === "" || text.includes(filter)) ? "" : "none";
+                            });
+                          }
+
+                          modal.addEventListener("shown.bs.modal", () => {
+                            fetch("/{{ $.Entity.Fiche.Name }}/vision-data/{{ $formField.Name }}")
+                              .then(r => r.json())
+                              .then(rows => { populateRows(rows); searchInput.value = ""; filterRows(""); searchInput.focus(); })
+                              .catch(console.error);
                           });
-                          tr.style.cursor = "pointer";
-                          tr.onclick = () => { document.getElementById("{{ $fd.Name }}").value = row["{{ $fd.VisionConfig.ReturnField }}"]; bootstrap.Modal.getInstance(modal).hide(); };
-                          tbody.appendChild(tr);
-                        });
-                      }
 
-                      function filterRows(term) {
-                        const filter = term.trim().toLowerCase();
-                        tbody.querySelectorAll("tr").forEach(tr => {
-                          const text = Array.from(tr.cells).map(td => td.textContent.toLowerCase()).join(" ");
-                          tr.style.display = (filter === "" || text.includes(filter)) ? "" : "none";
-                        });
-                      }
+                          searchInput.addEventListener("input", e => filterRows(e.target.value));
+                        })();
+                        </script>
 
-                      modal.addEventListener("shown.bs.modal", () => {
-                        fetch("/{{ $.Entity.Fiche.Name }}/vision-data/{{ $fd.Name }}")
-                          .then(r => r.json())
-                          .then(rows => { populateRows(rows); searchInput.value = ""; filterRows(""); searchInput.focus(); })
-                          .catch(console.error);
-                      });
-
-                      searchInput.addEventListener("input", e => filterRows(e.target.value));
-                    })();
-                    </script>
-
-                  {{ else }}
-                    {{/* V28 - Input group pour potentiellement ajouter un bouton vision */}}
-                    <div class="input-group">
-                      <input type="text" id="{{ $fd.Name }}" name="{{ $fd.Name }}" class="form-control{{ if index $.Errors $fd.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $fd.Name }}" {{ if $.Code }}{{ with index $.Code.FrontValidations $fd.Name }}{{ if .Required }} required{{ end }}{{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}{{ end }}{{ end }}>
-                      
-                      {{/* V28 - Ajout du bouton si configuré dans le YAML */}}
-                      {{ if $fd.VisionButton }}
-                        <button class="btn btn-outline-secondary vision-button" 
-                                type="button"
-                                data-vision-form="{{ $fd.VisionButton }}"
-                                data-field-name="{{ $fd.Name }}">
-                          👁️
-                        </button>
+                      {{ else }}
+                        {{/* Input pour les autres types de champs */}}
+                        <div class="input-group">
+                          <input type="text" id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="form-control{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $formField.Name }}" {{ if $fieldDef.ReadOnly }}readonly{{ end }} {{ if $.Code }}{{ with index $.Code.FrontValidations $formField.Name }}{{ if .Required }} required{{ end }}{{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}{{ end }}{{ end }}>
+                          
+                          {{ if $formField.VisionButton }}
+                            <button class="btn btn-outline-secondary vision-button" 
+                                    type="button"
+                                    data-vision-form="{{ $formField.VisionButton }}"
+                                    data-field-name="{{ $formField.Name }}">
+                              👁️
+                            </button>
+                          {{ end }}
+                        </div>
                       {{ end }}
+
+                      {{ with index $.Errors $formField.Name }}<div class="invalid-feedback">{{ . }}</div>{{ end }}
+
                     </div>
-                  {{ end }}
-
-                  {{ with index $.Errors $fd.Name }}<div class="invalid-feedback">{{ . }}</div>{{ end }}
-
-                </div>
-              </div>
+                  </div>
+                {{ end }}
+              {{ end }}
             {{ end }}
           </fieldset>
         {{ end }}

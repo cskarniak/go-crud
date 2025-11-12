@@ -92,37 +92,14 @@ forms:
     type: "fiche"
     entity: "compte"
     config:
+      codes: "compteFiche_code"
       groups:
         - name: "Informations Principales"
           fields:
             - name: "id"
             - name: "cpt_nom"
             - name: "cpt_commentaire"
-        - name: "Détails Bancaires"
-          fields:
-            - name: "cpt_agence"
-            - name: "cpt_guichet"
-            - name: "cpt_compte"
-            - name: "cpt_rib"
-        - name: "Accès en ligne"
-          fields:
-            - name: "cpt_url_site"
-            - name: "cpt_identifiant"
-        - name: "Rapprochement"
-          fields:
-            - name: "cpt_date_rapprochement"
-            - name: "cpt_reference_rapprochement"
-            - name: "cpt_solde_depart_rapprochement"
-            - name: "cpt_solde_final_rapprochement"
-            - name: "cpt_rapprochementencours"
-        - name: "État"
-          fields:
-            - name: "cpt_date_synchro"
-            - name: "cpt_solde_calcule"
-            - name: "cpt_ferme"
-            - name: "cpt_date_cloture"
-            - name: "cpt_solde_cloture"
-            - name: "cpt_comptegerepourautrui"
+
       labels:
         titleCreate: "Création d’un compte"
         titleUpdate: "Édition d’un compte"
