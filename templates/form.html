@@ -71,9 +71,11 @@
                     </label>
                     <div class="col-sm-9">
 
+                      {{ $isReadOnly := or $fieldDef.ReadOnly $formField.ReadOnly }}
+
                       {{ if eq $formField.Type "combo_base" }}
                         <!-- combo_base input -->
-                        <select id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="form-select{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" {{ if $fieldDef.ReadOnly }}disabled{{ end }} {{ if $.Code }}{{ with index $.Code.FrontValidations $formField.Name }}{{ if .Required }} required{{ end }}{{ end }}{{ end }}>
+                        <select id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="form-select{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" {{ if $isReadOnly }}disabled{{ end }} {{ if $.Code }}{{ with index $.Code.FrontValidations $formField.Name }}{{ if .Required }} required{{ end }}{{ end }}{{ end }}>
                           {{ range $opt := index $.ComboData $formField.Name }}
                             <option value="{{ $opt.Value }}" {{ if eq (printf "%v" $opt.Value) (printf "%v" (index $.DataRow $formField.Name)) }} selected{{ end }}>{{ $opt.Label }}</option>
                           {{ end }}
@@ -83,7 +85,7 @@
                         <!-- vision input + modal -->
                         <div class="d-flex">
                           <input type="text" id="{{ $formField.Name }}" name="{{ $formField.Name }}" readonly class="form-control me-2{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $formField.Name }}">
-                          <button type="button" class="btn-clode btn-close-whiteoutline-primary" data-bs-toggle="modal" data-bs-target="#modal-{{ $formField.Name }}" {{ if $fieldDef.ReadOnly }}disabled{{ end }}>…</button>
+                          <button type="button" class="btn-clode btn-close-whiteoutline-primary" data-bs-toggle="modal" data-bs-target="#modal-{{ $formField.Name }}" {{ if $isReadOnly }}disabled{{ end }}>…</button>
                         </div>
 
                         <!-- Modal générique vision -->
@@ -149,7 +151,6 @@
                       {{ else if eq $fieldDef.Type "boolean" }}
                         {{/* Input pour les champs booléens */}}
                         <div class="form-check mt-2">
-                          {{- $isReadOnly := $fieldDef.ReadOnly -}}
                           <input class="form-check-input" type="checkbox" id="{{ $formField.Name }}" name="{{ $formField.Name }}"
                             {{- if index $.DataRow $formField.Name }} checked{{ end }}
                             {{- if $isReadOnly }} disabled{{ end }}>
@@ -157,7 +158,6 @@
                       
                       {{ else if and (eq $fieldDef.Type "string") (gt $fieldDef.MaxLength 50) }}
                         {{/* Textarea pour les champs de texte longs */}}
-                        {{- $isReadOnly := $fieldDef.ReadOnly -}}
                         {{- $rows := 3 -}}
                         {{- if gt $formField.Rows 0 }}{{ $rows = $formField.Rows }}{{ end -}}
                         <textarea id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="form-control{{ if index $.Errors $formField.Name }} is-invalid{{ end }}{{ if $isReadOnly }} bg-light{{ end }}"
@@ -170,7 +170,6 @@
                         {{/* Input pour les autres types de champs */}}
                         <div class="input-group">
                           {{- /* Préparation des classes et attributs */ -}}
-                          {{- $isReadOnly := $fieldDef.ReadOnly -}}
                           {{- $alignClass := "" -}}
                           {{- with $formField.Align -}}
                             {{- $alignClass = printf " text-%s" . -}}

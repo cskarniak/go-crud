@@ -11,7 +11,7 @@ fields:
   - name: "id"
     type: "uint"
     label: "ID"
-    readonly: true
+    readonly: true # Règle de données : l'ID n'est JAMAIS modifiable
   - name: "cpt_nom"
     type: "string"
     label: "Nom"
@@ -82,7 +82,7 @@ fields:
   - name: "cpt_solde_calcule"
     type: "number"
     label: "Solde Calculé"
-    readonly: true
+    readonly: true # Règle de données : champ calculé non modifiable
   - name: "cpt_comptegerepourautrui"
     type: "boolean"
     label: "Compte pour autrui"

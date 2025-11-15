@@ -67,6 +67,7 @@ type VisionFormConfig struct {
 type FieldDef struct {
 	Name               string             `yaml:"name"`
 	Type               string             `yaml:"type,omitempty"`
+	ReadOnly           bool               `yaml:"readonly,omitempty"` // Ajout de ReadOnly
 	ComboConfig        *ComboFieldConfig  `yaml:"comboConfig,omitempty"`
 	VisionConfig       *VisionFieldConfig `yaml:"visionConfig,omitempty"`
 	VisionButton       string             `yaml:"visionButton,omitempty"`
