@@ -161,6 +161,29 @@ func (h *crudHandler) list(c *gin.Context) {
 		}
 	}
 
+	// Formater les nombres pour l'affichage
+	for _, row := range data {
+		for _, f := range h.ec.Fields {
+			if f.Type == "number" {
+				if ficheDef, ok := h.ec.FicheFieldsByName[f.Name]; ok && ficheDef.DecimalSeparator != nil {
+					if raw, ok := row[f.Name]; ok && raw != nil {
+						if num, err := strconv.ParseFloat(fmt.Sprint(raw), 64); err == nil {
+							decimals := 0
+							if ficheDef.Decimals != nil {
+								decimals = *ficheDef.Decimals
+							}
+							thousandsSep := ""
+							if ficheDef.ThousandsSeparator != nil {
+								thousandsSep = *ficheDef.ThousandsSeparator
+							}
+							row[f.Name] = formatNumber(num, decimals, *ficheDef.DecimalSeparator, thousandsSep)
+						}
+					}
+				}
+			}
+		}
+	}
+
 	var total int64
 	countQ.Count(&total)
 
@@ -245,22 +268,40 @@ func (h *crudHandler) create(c *gin.Context) {
 func (h *crudHandler) editForm(c *gin.Context) {
 	id := c.Param("id")
 	dataRow := make(map[string]interface{})
-	if err := h.db.Table(h.ec.Table).Where("id = ?", id).Take(&dataRow).Error; err != nil {
+	// On sélectionne toutes les colonnes
+	if err := h.db.Table(h.ec.Table).Select("*").Where("id = ?", id).Take(&dataRow).Error; err != nil {
 		c.String(http.StatusNotFound, "Enregistrement non trouvé : %v", err)
 		return
 	}
 
-	// Formater les dates pour l'affichage dans le formulaire
+	// Formater les dates et les nombres pour l'affichage dans le formulaire
+	const dbFormat = "2006-01-02 15:04:05" // Format de stockage
+
 	for _, f := range h.ec.Fields {
-		if f.Type == "date" {
-			if raw, ok := dataRow[f.Name]; ok && raw != nil {
-				if t, ok := raw.(time.Time); ok {
-					dataRow[f.Name] = t.Format("2006-01-02")
-				} else if str, ok := raw.(string); ok {
-					// GORM peut retourner des dates comme string
-					if t, err := time.Parse(time.RFC3339, str); err == nil {
-						dataRow[f.Name] = t.Format("2006-01-02")
+		raw, ok := dataRow[f.Name]
+		if !ok || raw == nil {
+			continue
+		}
+
+		switch f.Type {
+		case "datetime":
+			if dateStr, ok := raw.(string); ok {
+				if t, err := time.Parse(dbFormat, dateStr); err == nil {
+					dataRow[f.Name] = t.Format(f.DisplayFormat)
+				}
+			}
+		case "number":
+			if ficheDef, ok := h.ec.FicheFieldsByName[f.Name]; ok && ficheDef.DecimalSeparator != nil {
+				if num, err := strconv.ParseFloat(fmt.Sprint(raw), 64); err == nil {
+					decimals := 0
+					if ficheDef.Decimals != nil {
+						decimals = *ficheDef.Decimals
 					}
+					thousandsSep := ""
+					if ficheDef.ThousandsSeparator != nil {
+						thousandsSep = *ficheDef.ThousandsSeparator
+					}
+					dataRow[f.Name] = formatNumber(num, decimals, *ficheDef.DecimalSeparator, thousandsSep)
 				}
 			}
 		}
@@ -279,6 +320,7 @@ func (h *crudHandler) editForm(c *gin.Context) {
 		"SortOrder": c.Query("order"),
 	})
 }
+
 
 // update traite la soumission du formulaire de modification.
 func (h *crudHandler) update(c *gin.Context) {
@@ -340,43 +382,36 @@ func (h *crudHandler) validate(c *gin.Context) map[string]string {
 // et gère les valeurs vides pour les transformer en nil (corrige le bug).
 func (h *crudHandler) bindAndConvertForm(c *gin.Context) map[string]interface{} {
 	values := make(map[string]interface{})
+	
+	// Créer une map pour un accès rapide aux propriétés des champs
+	fieldProps := make(map[string]entity.Field)
+	for _, f := range h.ec.Fields {
+		fieldProps[f.Name] = f
+	}
 
 	for _, grp := range h.ec.Fiche.Groups {
 		for _, fd := range grp.Fields {
-			// Ignorer les champs readonly et l'ID
-			if fd.Name == "id" {
-				continue
-			}
-			var isReadOnly bool
-			var fieldType string
-			for _, f := range h.ec.Fields {
-				if f.Name == fd.Name {
-					isReadOnly = f.ReadOnly
-					fieldType = f.Type
-					break
-				}
-			}
-			if isReadOnly {
+			props, ok := fieldProps[fd.Name]
+			// Ignorer les champs qui ne sont pas dans la config globale, l'ID, ou les champs readonly
+			if !ok || props.Name == "id" || props.ReadOnly {
 				continue
 			}
 
 			raw := c.PostForm(fd.Name)
 			var finalValue interface{}
 
-			// Cas spécial pour les champs vides ou non envoyés (checkboxes)
 			if raw == "" {
-				if fieldType == "boolean" {
-					finalValue = false // Une checkbox non cochée n'est pas envoyée, donc sa valeur est 'false'
+				if props.Type == "boolean" {
+					finalValue = false
 				} else {
-					finalValue = nil // Pour les autres types, une chaîne vide devient NULL
+					finalValue = nil
 				}
 			} else {
-				// On ne fait la conversion que si la valeur n'est pas vide.
 				isSpecialType := fd.ComboConfig != nil || fd.VisionConfig != nil
 				if isSpecialType {
 					finalValue = raw
 				} else {
-					switch fieldType {
+					switch props.Type {
 					case "uint", "int":
 						if i, err := strconv.Atoi(raw); err == nil {
 							finalValue = i
@@ -387,7 +422,6 @@ func (h *crudHandler) bindAndConvertForm(c *gin.Context) map[string]interface{} 
 							finalValue = f
 						}
 					case "boolean":
-						// Géré par la valeur "on" que les navigateurs envoient pour les checkboxes cochées
 						if raw == "on" || raw == "true" || raw == "1" {
 							finalValue = true
 						} else {
@@ -396,6 +430,17 @@ func (h *crudHandler) bindAndConvertForm(c *gin.Context) map[string]interface{} 
 					case "date":
 						if t, err := time.Parse("2006-01-02", raw); err == nil {
 							finalValue = t
+						}
+					case "datetime":
+						if props.DisplayFormat != "" {
+							t, err := time.Parse(props.DisplayFormat, raw)
+							if err == nil {
+								finalValue = t.Format("2006-01-02 15:04:05")
+							} else {
+								finalValue = nil
+							}
+						} else {
+							finalValue = raw
 						}
 					default:
 						finalValue = raw
@@ -489,4 +534,42 @@ func (h *crudHandler) visionData(c *gin.Context) {
 // redirectToList gère l'alias de /<entity> vers la page de liste.
 func (h *crudHandler) redirectToList(c *gin.Context) {
 	c.Redirect(http.StatusSeeOther, "/"+h.ec.List.Name+"?"+c.Request.URL.RawQuery)
+}
+
+// formatNumber formate un nombre en chaîne de caractères avec les séparateurs et décimales spécifiés.
+func formatNumber(n float64, decimals int, decSep, thouSep string) string {
+	// Formate d'abord avec le bon nombre de décimales et un point comme séparateur.
+	s := strconv.FormatFloat(n, 'f', decimals, 64)
+
+	parts := strings.Split(s, ".")
+	integerPart := parts[0]
+	fractionalPart := ""
+	if len(parts) > 1 {
+		fractionalPart = parts[1]
+	}
+
+	// Ajoute le séparateur de milliers.
+	n_len := len(integerPart)
+	if n_len > 3 && thouSep != "" {
+		// Calcule le nombre de séparateurs nécessaires.
+		sep_count := (n_len - 1) / 3
+		// Crée une nouvelle chaîne avec assez d'espace.
+		new_integer_part := make([]byte, n_len+sep_count)
+		// Remplit la nouvelle chaîne de droite à gauche.
+		j := len(new_integer_part) - 1
+		for i := n_len - 1; i >= 0; i-- {
+			if (n_len-i-1)%3 == 0 && i != n_len-1 {
+				new_integer_part[j] = thouSep[0]
+				j--
+			}
+			new_integer_part[j] = integerPart[i]
+			j--
+		}
+		integerPart = string(new_integer_part)
+	}
+
+	if fractionalPart != "" {
+		return integerPart + decSep + fractionalPart
+	}
+	return integerPart
 }

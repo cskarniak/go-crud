@@ -19,8 +19,7 @@
   <link href="/assets/css/popup/popup.css" rel="stylesheet">
   <!-- CSS d'override spécifique à la popup de cette fiche -->
   <link href="/assets/css/popup/{{ .Entity.Fiche.Name }}-overrides.css" rel="stylesheet">
-</head>
-<body>
+</head><body>
   <div class="card form-card shadow-sm mt-4">
     <div class="card-header bg-primary text-white py-2">
       <h5 class="mb-0 text-center">
@@ -47,16 +46,25 @@
                   /{{ .Entity.Fiche.Name }}/update/{{ index $.DataRow "id" }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
                 {{ end }}'>
 
-        {{ range .Entity.Fiche.Groups }}
-          <fieldset class="mb-4">
-            <legend>{{ .Name }}</legend>
+        <!-- Navigation des onglets -->
+        <ul class="nav nav-tabs" id="formTab" role="tablist">
+          {{ range $index, $group := .Entity.Fiche.Groups }}
+            <li class="nav-item" role="presentation">
+              <button class="nav-link {{ if eq $index 0 }}active{{ end }}" id="tab-{{ $index }}-tab" data-bs-toggle="tab" data-bs-target="#tab-{{ $index }}" type="button" role="tab" aria-controls="tab-{{ $index }}" aria-selected="{{ if eq $index 0 }}true{{ else }}false{{ end }}">{{ .Name }}</button>
+            </li>
+          {{ end }}
+        </ul>
 
-            {{ range .Fields }}
-              {{ $formField := . }}
-              {{ range $.Entity.Fields }}
-                {{ if eq .Name $formField.Name }}
-                  {{ $fieldDef := . }}
+        <!-- Contenu des onglets -->
+        <div class="tab-content" id="formTabContent">
+          {{ range $index, $group := .Entity.Fiche.Groups }}
+            <div class="tab-pane fade {{ if eq $index 0 }}show active{{ end }} p-3" id="tab-{{ $index }}" role="tabpanel" aria-labelledby="tab-{{ $index }}-tab">
+              
+              {{ range .Fields }}
+                {{ $formField := . }}
+                {{ $fieldDef := (index $.Entity.FieldsByName $formField.Name) }}
 
+                {{ if $fieldDef }}
                   <div class="row mb-3 align-items-center">
                     <label for="{{ $formField.Name }}" class="col-sm-3 col-form-label fw-bold">
                       {{ $fieldDef.Label }}
@@ -137,11 +145,51 @@
                           searchInput.addEventListener("input", e => filterRows(e.target.value));
                         })();
                         </script>
+                      
+                      {{ else if eq $fieldDef.Type "boolean" }}
+                        {{/* Input pour les champs booléens */}}
+                        <div class="form-check mt-2">
+                          {{- $isReadOnly := $fieldDef.ReadOnly -}}
+                          <input class="form-check-input" type="checkbox" id="{{ $formField.Name }}" name="{{ $formField.Name }}"
+                            {{- if index $.DataRow $formField.Name }} checked{{ end }}
+                            {{- if $isReadOnly }} disabled{{ end }}>
+                        </div>
+                      
+                      {{ else if and (eq $fieldDef.Type "string") (gt $fieldDef.MaxLength 50) }}
+                        {{/* Textarea pour les champs de texte longs */}}
+                        {{- $isReadOnly := $fieldDef.ReadOnly -}}
+                        {{- $rows := 3 -}}
+                        {{- if gt $formField.Rows 0 }}{{ $rows = $formField.Rows }}{{ end -}}
+                        <textarea id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="form-control{{ if index $.Errors $formField.Name }} is-invalid{{ end }}{{ if $isReadOnly }} bg-light{{ end }}"
+                          rows="{{ $rows }}"
+                          {{- if $isReadOnly }} readonly{{ end }}
+                          {{- if gt $fieldDef.MaxLength 0 }} maxlength="{{ $fieldDef.MaxLength }}"{{ end }}
+                          >{{- index $.DataRow $formField.Name -}}</textarea>
 
                       {{ else }}
                         {{/* Input pour les autres types de champs */}}
                         <div class="input-group">
-                          <input type="text" id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="form-control{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $formField.Name }}" {{ if $fieldDef.ReadOnly }}readonly{{ end }} {{ if $.Code }}{{ with index $.Code.FrontValidations $formField.Name }}{{ if .Required }} required{{ end }}{{ if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}{{ end }}{{ end }}>
+                          {{- /* Préparation des classes et attributs */ -}}
+                          {{- $isReadOnly := $fieldDef.ReadOnly -}}
+                          {{- $alignClass := "" -}}
+                          {{- with $formField.Align -}}
+                            {{- $alignClass = printf " text-%s" . -}}
+                          {{- end -}}
+                          {{- $errorClass := "" -}}
+                          {{- if index $.Errors $formField.Name }}{{- $errorClass = " is-invalid" -}}{{ end -}}
+                          {{- $readOnlyClass := "" -}}
+                          {{- if $isReadOnly }}{{- $readOnlyClass = " bg-light" -}}{{ end -}}
+                          {{- $finalClasses := printf "form-control%s%s%s" $errorClass $alignClass $readOnlyClass -}}
+
+                          <input type="text" id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="{{ $finalClasses }}" value="{{ index $.DataRow $formField.Name }}"
+                            {{- if $isReadOnly }} readonly{{ end }}
+                            {{- with $formField.MaxLength }} maxlength="{{ . }}"
+                            {{- else }}{{ if gt $fieldDef.MaxLength 0 }} maxlength="{{ $fieldDef.MaxLength }}"{{ end }}{{ end }}
+                            {{- with $formField.Size }} size="{{ . }}"{{ end }}
+                            {{- if $.Code }}{{ with index $.Code.FrontValidations $formField.Name }}
+                              {{- if .Required }} required{{ end }}
+                              {{- if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}
+                            {{- end }}{{ end }}>
                           
                           {{ if $formField.VisionButton }}
                             <button class="btn btn-outline-secondary vision-button" 
@@ -160,9 +208,9 @@
                   </div>
                 {{ end }}
               {{ end }}
-            {{ end }}
-          </fieldset>
-        {{ end }}
+            </div>
+          {{ end }}
+        </div>
 
         <div class="mt-4 text-end">
           <button type="submit" class="btn btn-success">{{ if eq .Mode "new" }}{{ index .Entity.Fiche.Labels "submitCreate" }}{{ else }}{{ index .Entity.Fiche.Labels "submitUpdate" }}{{ end }}</button>

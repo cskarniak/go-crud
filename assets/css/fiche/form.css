@@ -57,16 +57,23 @@ form .mb-3 {
   margin-bottom: 1rem;
 }
 
-form label {
+form .col-form-label {
   font-weight: 500;
   color: var(--form-label-color);
   margin-bottom: 0.25rem;
+  font-size: 12px !important; /* Police taille 12px, !important pour forcer */
+}
+
+form input.form-control {
+  height: calc(1.5em + 0.5rem + 2px); /* Hauteur réduite */
+  padding: 0.25rem 0.5rem; /* Padding réduit */
+  border: 1px solid var(--form-input-border-color);
+  border-radius: 0.25rem;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   font-size: 12px; /* Police taille 12px */
 }
 
-form input.form-control,
 form textarea.form-control {
-  height: calc(1.5em + 0.5rem + 2px); /* Hauteur réduite */
   padding: 0.25rem 0.5rem; /* Padding réduit */
   border: 1px solid var(--form-input-border-color);
   border-radius: 0.25rem;
@@ -81,6 +88,12 @@ form select.form-select {
   border-radius: 0.25rem;
   transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   font-size: 12px; /* Police taille 12px */
+}
+
+/* Règle pour que l'attribut 'size' fonctionne, y compris sur les champs readonly */
+form .input-group input.form-control[size] {
+  flex: none !important; /* Annule l'étirement forcé par Bootstrap */
+  width: auto !important;  /* Permet à l'attribut 'size' de prendre le contrôle */
 }
 
 form input.form-control:focus,
@@ -116,7 +129,7 @@ form .invalid-feedback {
 
 /* Contrôle de la largeur de la fiche */
 .form-card {
-  max-width: 600px;
+  max-width: 800px; /* Largeur augmentée */
   margin: 2rem auto;
 }
 
@@ -137,8 +150,8 @@ form .invalid-feedback {
 .form-card .form-control[readonly],
 .form-card .form-select[readonly],
 .form-card textarea[readonly] {
-  background-color: var(--form-readonly-bg-color);
-  color: var(--form-readonly-text-color);
+  background-color: var(--form-readonly-bg-color) !important;
+  color: var(--form-readonly-text-color) !important;
   opacity: 1;
 }
 
@@ -146,4 +159,12 @@ form .invalid-feedback {
 .form-card .form-control-plaintext {
   background-color: var(--form-readonly-bg-color);
   color: var(--form-readonly-text-color);
+}
+
+/* Alignement du texte dans les champs de formulaire */
+form input.form-control.text-right {
+  text-align: right;
+}
+form input.form-control.text-center {
+  text-align: center;
 }

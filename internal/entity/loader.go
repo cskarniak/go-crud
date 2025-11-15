@@ -63,64 +63,49 @@ type VisionFormConfig struct {
 	PageSizeOptions  []int             `yaml:"pageSizeOptions"`
 }
 
-// FieldDef représente un champ simple, combo_base ou vision
+// FieldDef représente un champ dans un formulaire (fiche)
 type FieldDef struct {
-	Name         string
-	Type         string
-	ComboConfig  *ComboFieldConfig
-	VisionConfig *VisionFieldConfig
-	VisionButton string `yaml:"visionButton,omitempty"` // V28 - Bouton pour ouvrir un formulaire vision
+	Name               string             `yaml:"name"`
+	Type               string             `yaml:"type,omitempty"`
+	ComboConfig        *ComboFieldConfig  `yaml:"comboConfig,omitempty"`
+	VisionConfig       *VisionFieldConfig `yaml:"visionConfig,omitempty"`
+	VisionButton       string             `yaml:"visionButton,omitempty"`
+	MaxLength          *int               `yaml:"maxLength,omitempty"`
+	Size               *int               `yaml:"size,omitempty"`
+	Rows               int                `yaml:"rows,omitempty"`
+	Decimals           *int               `yaml:"decimals,omitempty"`
+	DecimalSeparator   *string            `yaml:"decimalSeparator,omitempty"`
+	ThousandsSeparator *string            `yaml:"thousandsSeparator,omitempty"`
+	Align              *string            `yaml:"align,omitempty"`
 }
 
 func (f *FieldDef) UnmarshalYAML(node *yaml.Node) error {
-	var raw map[string]yaml.Node
-	if err := node.Decode(&raw); err != nil {
+	// Décodage en map pour gérer les champs simples (string) ou complexes (map)
+	var s string
+	if err := node.Decode(&s); err == nil {
+		f.Name = s
+		return nil
+	}
+
+	// Si ce n'est pas une simple chaîne, on décode comme une map
+	type rawFieldDef FieldDef // Alias pour éviter la récursion infinie
+	if err := node.Decode((*rawFieldDef)(f)); err != nil {
 		return err
-	}
-	if n, ok := raw["name"]; ok {
-		if err := n.Decode(&f.Name); err != nil {
-			return err
-		}
-	} else {
-		return fmt.Errorf("field entry missing 'name'")
-	}
-
-	// V28 - Décodage du bouton vision
-	if vb, ok := raw["visionButton"]; ok {
-		if err := vb.Decode(&f.VisionButton); err != nil {
-			return err
-		}
-	}
-
-	f.Type = "string"
-	if t, ok := raw["type"]; ok {
-		if err := t.Decode(&f.Type); err != nil {
-			return err
-		}
-	}
-	if f.Type == "combo_base" {
-		cfg := &ComboFieldConfig{}
-		node.Decode(cfg)
-		f.ComboConfig = cfg
-	} else if f.Type == "vision" {
-		vc := &VisionFieldConfig{}
-		node.Decode(vc)
-		f.VisionConfig = vc
 	}
 	return nil
 }
 
 // Group de champs pour la fiche
 type Group struct {
-	Name   string
-	Fields []FieldDef
+	Name   string     `yaml:"name"`
+	Fields []FieldDef `yaml:"fields"`
 }
 
 // FicheConfig configuration pour la fiche
 type FicheConfig struct {
-	Name   string
-	Groups []Group
-	Labels map[string]string
+	Name   string            `yaml:"name"`
+	Groups []Group           `yaml:"groups"`
+	Labels map[string]string `yaml:"labels"`
 }
 
 // ListConfig configuration pour la liste
@@ -136,28 +121,32 @@ type ListConfig struct {
 	Labels           map[string]string `yaml:"labels"`
 }
 
-// Field décrit un champ d'entité stocké en base
+// Field décrit un champ d'entité (modèle de données)
 type Field struct {
-	Name     string
-	Label    string
-	Type     string
-	ReadOnly bool
-	Required bool
-	Default  interface{}
+	Name          string
+	Label         string
+	Type          string
+	ReadOnly      bool
+	Required      bool
+	Default       interface{}
+	DisplayFormat string
+	MaxLength     int
 }
 
 // EntityConfig regroupe tout le config d’une entité
 type EntityConfig struct {
-	Name            string
-	Table           string
-	Label           string
-	LabelPlural     string
-	DefaultPageSize int
-	Fields          []Field
-	List            ListConfig
-	Fiche           FicheConfig
-	VisionForms     map[string]VisionFormConfig // Map pour stocker les formulaires 'vision'
-	Code            *form_codes.FormCode
+	Name              string
+	Table             string
+	Label             string
+	LabelPlural       string
+	DefaultPageSize   int
+	Fields            []Field
+	FieldsByName      map[string]Field
+	FicheFieldsByName map[string]FieldDef // Map pour un accès rapide aux champs de la fiche
+	List              ListConfig
+	Fiche             FicheConfig
+	VisionForms       map[string]VisionFormConfig
+	Code              *form_codes.FormCode
 }
 
 // yamlEntity reflète la structure des fichiers YAML
@@ -170,12 +159,14 @@ type yamlEntity struct {
 		DefaultPageSize int    `yaml:"defaultPageSize,omitempty"`
 	} `yaml:"entity"`
 	Fields []struct {
-		Name     string      `yaml:"name"`
-		Type     string      `yaml:"type,omitempty"`
-		Label    string      `yaml:"label"`
-		ReadOnly bool        `yaml:"readonly,omitempty"`
-		Required bool        `yaml:"required,omitempty"`
-		Default  interface{} `yaml:"default,omitempty"`
+		Name          string      `yaml:"name"`
+		Type          string      `yaml:"type,omitempty"`
+		Label         string      `yaml:"label"`
+		ReadOnly      bool        `yaml:"readonly,omitempty"`
+		Required      bool        `yaml:"required,omitempty"`
+		Default       interface{} `yaml:"default,omitempty"`
+		DisplayFormat string      `yaml:"displayFormat,omitempty"`
+		MaxLength     int         `yaml:"maxLength,omitempty"`
 	} `yaml:"fields"`
 	Forms []struct {
 		Name   string    `yaml:"name"`
@@ -192,17 +183,21 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 	}
 
 	ec := &EntityConfig{
-		Name:            y.Entity.Name,
-		Table:           y.Entity.Table,
-		Label:           y.Entity.Label,
-		LabelPlural:     y.Entity.LabelPlural,
-		DefaultPageSize: y.Entity.DefaultPageSize,
-		Fields:          make([]Field, len(y.Fields)),
-		VisionForms:     make(map[string]VisionFormConfig), // Initialiser la map
+		Name:              y.Entity.Name,
+		Table:             y.Entity.Table,
+		Label:             y.Entity.Label,
+		LabelPlural:       y.Entity.LabelPlural,
+		DefaultPageSize:   y.Entity.DefaultPageSize,
+		Fields:            make([]Field, len(y.Fields)),
+		FieldsByName:      make(map[string]Field),
+		FicheFieldsByName: make(map[string]FieldDef), // Initialisation
+		VisionForms:       make(map[string]VisionFormConfig),
 	}
 
 	for i, f := range y.Fields {
-		ec.Fields[i] = Field{f.Name, f.Label, f.Type, f.ReadOnly, f.Required, f.Default}
+		field := Field{f.Name, f.Label, f.Type, f.ReadOnly, f.Required, f.Default, f.DisplayFormat, f.MaxLength}
+		ec.Fields[i] = field
+		ec.FieldsByName[f.Name] = field
 	}
 
 	for _, form := range y.Forms {
@@ -215,29 +210,12 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 			listCfg.Name = form.Name
 			ec.List = listCfg
 		case "fiche":
-			var ficheNode struct { // Structure temporaire pour le décodage
-				Labels map[string]string `yaml:"labels"`
-				Groups []struct {
-					Name   string      `yaml:"name"`
-					Fields []yaml.Node `yaml:"fields"`
-				} `yaml:"groups"`
-			}
-			if err := form.Config.Decode(&ficheNode); err != nil {
+			var ficheCfg FicheConfig
+			if err := form.Config.Decode(&ficheCfg); err != nil {
 				return nil, fmt.Errorf("erreur décodage 'fiche' form %s: %w", form.Name, err)
 			}
-			fc := FicheConfig{Name: form.Name, Labels: ficheNode.Labels}
-			for _, grp := range ficheNode.Groups {
-				g := Group{Name: grp.Name}
-				for _, node := range grp.Fields {
-					var fd FieldDef
-					if err := node.Decode(&fd); err != nil {
-						return nil, fmt.Errorf("fields decoding: %w", err)
-					}
-					g.Fields = append(g.Fields, fd)
-				}
-				fc.Groups = append(fc.Groups, g)
-			}
-			ec.Fiche = fc
+			ficheCfg.Name = form.Name
+			ec.Fiche = ficheCfg
 		case "vision":
 			var visionCfg VisionFormConfig
 			if err := form.Config.Decode(&visionCfg); err != nil {
@@ -246,6 +224,13 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 			visionCfg.Name = form.Name
 			visionCfg.Type = form.Type
 			ec.VisionForms[form.Name] = visionCfg
+		}
+	}
+
+	// Remplir la map FicheFieldsByName après avoir chargé la fiche
+	for _, group := range ec.Fiche.Groups {
+		for _, fieldDef := range group.Fields {
+			ec.FicheFieldsByName[fieldDef.Name] = fieldDef
 		}
 	}
 

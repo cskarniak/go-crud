@@ -15,33 +15,42 @@ fields:
   - name: "cpt_nom"
     type: "string"
     label: "Nom"
+    maxLength: 50
   - name: "cpt_agence"
     type: "uint"
     label: "Code Agence"
+    maxLength: 5
   - name: "cpt_guichet"
     type: "uint"
     label: "Code Guichet"
+    maxLength: 5
   - name: "cpt_compte"
     type: "uint"
     label: "Numéro de Compte"
+    maxLength: 11
   - name: "cpt_rib"
     type: "uint"
     label: "Clé RIB"
+    maxLength: 2
   - name: "cpt_date_synchro"
-    type: "date"
+    type: "datetime"
     label: "Date Synchro"
+    displayFormat: "02/01/2006"
   - name: "cpt_date_cloture"
-    type: "date"
+    type: "datetime"
     label: "Date Clôture"
+    displayFormat: "02/01/2006"
   - name: "cpt_solde_cloture"
     type: "number"
     label: "Solde de Clôture"
   - name: "cpt_date_rapprochement"
-    type: "date"
+    type: "datetime"
     label: "Date Rapprochement"
+    displayFormat: "02/01/2006"
   - name: "cpt_reference_rapprochement"
     type: "string"
     label: "Réf. Rapprochement"
+    maxLength: 50
   - name: "cpt_solde_depart_rapprochement"
     type: "number"
     label: "Solde Départ Rappro."
@@ -54,21 +63,26 @@ fields:
   - name: "cpt_reference_dernierreleve"
     type: "string"
     label: "Réf. Dernier Relevé"
+    maxLength: 50
   - name: "cpt_ferme"
     type: "boolean"
     label: "Fermé"
   - name: "cpt_commentaire"
     type: "string"
     label: "Commentaire"
+    maxLength: 255
   - name: "cpt_url_site"
     type: "string"
     label: "URL Site Banque"
+    maxLength: 255
   - name: "cpt_identifiant"
     type: "string"
     label: "Identifiant"
+    maxLength: 50
   - name: "cpt_solde_calcule"
     type: "number"
     label: "Solde Calculé"
+    readonly: true
   - name: "cpt_comptegerepourautrui"
     type: "boolean"
     label: "Compte pour autrui"
@@ -82,9 +96,9 @@ forms:
       defaultSortField: "id"
       defaultSortOrder: "asc"
       pageSizeOptions: [5, 10, 25, 50]
-      columns: ["id", "cpt_nom"]
+      columns: ["id", "cpt_nom", "cpt_solde_calcule"]
       searchableFields: ["id", "cpt_nom"]
-      sortableFields: ["id", "cpt_nom"]
+      sortableFields: ["id", "cpt_nom", "cpt_solde_calcule"]
       labels:
         title: "Liste des comptes"
 
@@ -94,11 +108,66 @@ forms:
     config:
       codes: "compteFiche_code"
       groups:
-        - name: "Informations Principales"
+        - name: "Général"
           fields:
             - name: "id"
+              align: "right"
             - name: "cpt_nom"
+              size: 40
             - name: "cpt_commentaire"
+              rows: 4
+              size: 50
+            - name: "cpt_solde_calcule"
+              size: 12
+              decimals: 2
+              decimalSeparator: ","
+              thousandsSeparator: " "
+              align: "right"
+        - name: "Banque"
+          fields:
+            - name: "cpt_agence"
+              size: 5
+            - name: "cpt_guichet"
+              size: 5
+            - name: "cpt_compte"
+              size: 12
+            - name: "cpt_rib"
+              size: 2
+        - name: "Rapprochement"
+          fields:
+            - name: "cpt_date_rapprochement"
+              size: 10
+            - name: "cpt_reference_rapprochement"
+              size: 40
+            - name: "cpt_solde_depart_rapprochement"
+              size: 12
+              decimals: 2
+              decimalSeparator: ","
+              thousandsSeparator: " "
+              align: "right"
+            - name: "cpt_solde_final_rapprochement"
+              size: 12
+              decimals: 2
+              decimalSeparator: ","
+              thousandsSeparator: " "
+              align: "right"
+            - name: "cpt_rapprochementencours"
+            - name: "cpt_reference_dernierreleve"
+              size: 40
+        - name: "Accès Web"
+          fields:
+            - name: "cpt_url_site"
+              size: 50
+            - name: "cpt_identifiant"
+              size: 30
+        - name: "État"
+          fields:
+            - name: "cpt_ferme"
+            - name: "cpt_date_cloture"
+              size: 10
+            - name: "cpt_date_synchro"
+              size: 10
+            - name: "cpt_comptegerepourautrui"
 
       labels:
         titleCreate: "Création d’un compte"

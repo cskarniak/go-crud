@@ -92,7 +92,16 @@
                 {{ $row := . }}
                 <tr data-id="{{ index $row "id" }}" class="{{ if and $.IsVisionReturn $.AllowSelectable }}vision-return-row{{ end }} {{ if index $row "_highlight" }}highlight-row{{ end }}">
                   {{ range $.Columns }}
-                    <td data-label="{{ . }}">{{ index $row . }}</td>
+                    {{ $currentColumnName := . }}
+                    {{ $alignClass := "" }}
+                    {{ range $.Entity.Fields }}
+                        {{ if eq .Name $currentColumnName }}
+                            {{ if .Align }}
+                                {{ $alignClass = printf "text-%s" .Align }}
+                            {{ end }}
+                        {{ end }}
+                    {{ end }}
+                    <td data-label="{{ . }}" class="{{ $alignClass }}">{{ index $row . }}</td>
                   {{ end }}
                   <td>
                     {{- if $allowUpdate -}}
