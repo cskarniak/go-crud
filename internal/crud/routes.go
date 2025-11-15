@@ -165,18 +165,10 @@ func (h *crudHandler) list(c *gin.Context) {
 	for _, row := range data {
 		for _, f := range h.ec.Fields {
 			if f.Type == "number" {
-				if ficheDef, ok := h.ec.FicheFieldsByName[f.Name]; ok && ficheDef.DecimalSeparator != nil {
+				if ficheDef, ok := h.ec.FicheFieldsByName[f.Name]; ok && ficheDef.DecimalSeparator != "" {
 					if raw, ok := row[f.Name]; ok && raw != nil {
 						if num, err := strconv.ParseFloat(fmt.Sprint(raw), 64); err == nil {
-							decimals := 0
-							if ficheDef.Decimals != nil {
-								decimals = *ficheDef.Decimals
-							}
-							thousandsSep := ""
-							if ficheDef.ThousandsSeparator != nil {
-								thousandsSep = *ficheDef.ThousandsSeparator
-							}
-							row[f.Name] = formatNumber(num, decimals, *ficheDef.DecimalSeparator, thousandsSep)
+							row[f.Name] = formatNumber(num, ficheDef.Decimals, ficheDef.DecimalSeparator, ficheDef.ThousandsSeparator)
 						}
 					}
 				}
@@ -291,17 +283,24 @@ func (h *crudHandler) editForm(c *gin.Context) {
 				}
 			}
 		case "number":
-			if ficheDef, ok := h.ec.FicheFieldsByName[f.Name]; ok && ficheDef.DecimalSeparator != nil {
+			if ficheDef, ok := h.ec.FicheFieldsByName[f.Name]; ok && ficheDef.DecimalSeparator != "" {
 				if num, err := strconv.ParseFloat(fmt.Sprint(raw), 64); err == nil {
-					decimals := 0
-					if ficheDef.Decimals != nil {
-						decimals = *ficheDef.Decimals
-					}
-					thousandsSep := ""
-					if ficheDef.ThousandsSeparator != nil {
-						thousandsSep = *ficheDef.ThousandsSeparator
-					}
-					dataRow[f.Name] = formatNumber(num, decimals, *ficheDef.DecimalSeparator, thousandsSep)
+					dataRow[f.Name] = formatNumber(num, ficheDef.Decimals, ficheDef.DecimalSeparator, ficheDef.ThousandsSeparator)
+				}
+			}
+		case "boolean": // Nouvelle logique pour les booléens
+			// GORM peut renvoyer des booléens comme int64 (0 ou 1) ou bool
+			if val, ok := raw.(int64); ok {
+				dataRow[f.Name] = val != 0 // Convertit 0 en false, tout le reste en true
+			} else if val, ok := raw.(bool); ok {
+				dataRow[f.Name] = val
+			} else {
+				// Si ce n'est ni int64 ni bool, on essaie de parser la chaîne si c'est une chaîne
+				if s, ok := raw.(string); ok {
+					dataRow[f.Name] = (s == "true" || s == "1" || s == "on")
+				} else {
+					// Par défaut, si on ne sait pas, on considère false
+					dataRow[f.Name] = false
 				}
 			}
 		}
@@ -428,11 +427,15 @@ func (h *crudHandler) bindAndConvertForm(c *gin.Context) map[string]interface{} 
 							finalValue = false
 						}
 					case "date":
-						if t, err := time.Parse("2006-01-02", raw); err == nil {
+						if raw == "" { // Si le champ date est vide
+							finalValue = time.Now() // Remplir avec la date/heure actuelle
+						} else if t, err := time.Parse("2006-01-02", raw); err == nil {
 							finalValue = t
 						}
 					case "datetime":
-						if props.DisplayFormat != "" {
+						if raw == "" { // Si le champ datetime est vide
+							finalValue = time.Now().Format("2006-01-02 15:04:05") // Remplir avec la date/heure actuelle formatée
+						} else if props.DisplayFormat != "" {
 							t, err := time.Parse(props.DisplayFormat, raw)
 							if err == nil {
 								finalValue = t.Format("2006-01-02 15:04:05")

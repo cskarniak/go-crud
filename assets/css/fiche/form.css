@@ -37,15 +37,6 @@
 /* ===================================================== */
 
 
-/* Conteneur du formulaire */
-form {
-  background-color: var(--form-bg-color);
-  padding: 1.5rem;
-  border: 1px solid var(--form-border-color);
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 6px var(--form-shadow-color);
-}
-
 /* Titres de section */
 form h1, form legend {
   color: var(--form-title-color);
@@ -92,7 +83,7 @@ form select.form-select {
 
 /* Règle pour que l'attribut 'size' fonctionne, y compris sur les champs readonly */
 form .input-group input.form-control[size] {
-  flex: none !important; /* Annule l'étirement forcé par Bootstrap */
+  flex: none !important; /* Annule l'étirement forcée par Bootstrap */
   width: auto !important;  /* Permet à l'attribut 'size' de prendre le contrôle */
 }
 
@@ -104,6 +95,11 @@ form textarea.form-control:focus {
 }
 
 /* Boutons */
+form .btn-success,
+form .btn-secondary {
+  font-size: var(--form-action-button-font-size, 1rem); /* Utilise la variable CSS pour la taille de police */
+}
+
 form .btn-success {
   background-color: var(--form-btn-success-bg-color);
   border-color: var(--form-btn-success-border-color);
@@ -131,6 +127,24 @@ form .invalid-feedback {
 .form-card {
   max-width: 800px; /* Largeur augmentée */
   margin: 2rem auto;
+}
+
+/* Assurer que le corps de la carte et le contenu des onglets héritent du fond du form-card */
+.form-card .card-body {
+  background-color: inherit;
+}
+
+/* Appliquer la hauteur maximale et le défilement directement au formulaire */
+form {
+  /* max-height: var(--form-max-height, none); */ /* Supprimé */
+  /* overflow-y: auto; */ /* Supprimé */
+}
+
+.form-card .tab-content {
+  background-color: inherit;
+  max-height: calc(100vh - var(--form-content-max-height-adjustment, 200px)); /* Hauteur dynamique */
+  overflow-y: auto;
+  overflow-x: hidden; /* Supprime l'ascenseur horizontal */
 }
 
 /* Zone d’erreurs en fond pastel */
@@ -167,4 +181,34 @@ form input.form-control.text-right {
 }
 form input.form-control.text-center {
   text-align: center;
+}
+
+/* Règle pour forcer le fond blanc sur le contenu des onglets pour toutes les fiches */
+.tab-content,
+.tab-content .tab-pane {
+  background-color: var(--tab-content-bg, #ffffff) !important; /* Utilise la variable CSS */
+}
+
+/* Styles pour les onglets utilisant les variables personnalisées */
+.nav-tabs .nav-link {
+  background-color: var(--tab-inactive-bg, #e9ecef); /* Couleur par défaut si non définie */
+  border-color: #dee2e6 #dee2e6 #dee2e6; /* Garder les bordures Bootstrap par défaut */
+  font-size: var(--tab-label-font-size, 1rem); /* Utilise la variable CSS pour la taille de police */
+}
+
+.nav-tabs .nav-link.active {
+  background-color: var(--tab-active-bg, #ffffff); /* Couleur par défaut si non définie */
+  border-color: #dee2e6 #dee2e6 #ffffff; /* Bordure inférieure blanche pour l'onglet actif */
+}
+
+/* Styles pour les colonnes de libellés et de champs */
+.label-col {
+  flex: 0 0 var(--label-col-width, 25%); /* Empêche le rétrécissement, définit la largeur */
+  max-width: var(--label-col-width, 25%); /* Assure que la largeur ne dépasse pas */
+}
+
+.field-col {
+  flex: 1 0 0%; /* Prend l'espace restant */
+  max-width: calc(100% - var(--label-col-width, 25%)); /* Limite la largeur en fonction de la colonne de libellé */
+  box-sizing: border-box; /* Ajout pour inclure padding et border dans la largeur */
 }

@@ -1,9 +1,9 @@
 # config/entities/categories.yaml
 
 entity:
-  name: "categorie"
+  name: "categories"
   table: "categories"
-  label: "Catégorie"
+  label: "Catégories"
   labelPlural: "Catégories"
   defaultPageSize: 10
 
@@ -20,6 +20,7 @@ fields:
   - name: "date_maj"
     type: "date"
     label:  "Date MAJ"
+    displayFormat: "02/01/2006"
     required: true
   - name: "pod"
     type: "uint"
@@ -33,17 +34,18 @@ fields:
     default: null
     readonly: false
   - name: "podvision"
-    type: "uint"
+    type: "text" # Ajout explicite du type 'text'
     label: "podvision"
     required: False
     default: null
     readonly: false
 
 forms:
-  - name: "categorieList"
+  - name: "categoriesList"
     type: "list"
     entity: "categories"
     config:
+      maxHeight: "900px"
       pageSize: 10   
       defaultSortField: "id"
       defaultSortOrder: "asc"
@@ -53,11 +55,24 @@ forms:
       sortableFields: ["id", "libelle"]
       labels:
         title: "Liste des catégories"
+      # Nouvelles propriétés pour la liste
+      buttonFontSize: "0.75rem" # Taille de police par défaut pour les boutons de liste
+      paginationButtonFontSize: "0.875rem" # Taille de police par défaut pour les boutons de pagination
+      paginationTextFontSize: "0.875rem" # Taille de police par défaut pour le texte de pagination
 
-  - name: "categorieFiche"
+  - name: "categoriesFiche"
     type: "fiche"
     entity: "categories"
     config:
+      # Nouvelles propriétés pour la fiche
+      tabInactiveBackgroundColor: "#e9ecef" # Couleur de fond par défaut des onglets inactifs
+      tabActiveBackgroundColor: "#ffffff"   # Couleur de fond par défaut de l'onglet actif
+      tabContentBackgroundColor: "#ffffff"  # Couleur de fond par défaut du contenu des onglets
+      labelColumnWidth: "25%"               # Largeur par défaut de la colonne des libellés
+      tabLabelFontSize: "0.85rem"              # Taille de police par défaut des libellés d'onglets
+      buttonFontSize: "1rem"                # Taille de police par défaut des boutons généraux de fiche
+      formActionButtonsFontSize: "1rem"     # Taille de police par défaut des boutons d'action (Enregistrer/Annuler)
+      formContentMaxHeightAdjustment: "200px" # Ajusté à une valeur plus réaliste
       groups:
         - name: "Infos principales"
           fields: 
@@ -77,7 +92,7 @@ forms:
                 - libelle
             separator: " - "
           - name: "podvisu"
-            type: vision 
+            type: vision
             cssClass: "field-podvisu"
             sql: |
               SELECT id,libelle
@@ -85,13 +100,12 @@ forms:
               WHERE 1 = 1
               ORDER BY libelle
             keyField: id
-            displayFields: 
+            displayFields:
               - id
-              - libelle   
+              - libelle
             returnField: id                # colonne qu’on renvoie dans client_id
             modalTitle: "Sélectionner une catégorie"
-          - name: "podvision"
-            visionButton: "subCategoriesVisu" # V28 - Ajout d'un bouton vision
+
       labels:
         titleCreate: "Création d’une catégorie"
         titleUpdate: "Édition d’une catégorie"

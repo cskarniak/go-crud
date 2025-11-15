@@ -1,4 +1,4 @@
-# config/form_codes/categorieFiche_code.yaml
+# config/form_codes/regroupementFiche_code.yaml
 
 backValidations:
   libelle:

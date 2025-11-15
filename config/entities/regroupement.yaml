@@ -1,0 +1,115 @@
+entity:
+  name: "regroupement"
+  table: "regroupement"
+  label: "Regroupement"
+  labelPlural: "Regroupements"
+  defaultPageSize: 10
+
+fields:
+  - name: "id"
+    type: "uint"
+    label: "ID"
+    readonly: true
+  - name: "libelle"
+    type: "string"
+    label: "Libellé"
+    maxLength: 255
+    required: true
+  - name: "type_categorie"
+    type: "boolean"
+    label: "Type Catégorie"
+  - name: "type_poste"
+    type: "boolean"
+    label: "Type Poste"
+  - name: "type_tb"
+    type: "boolean"
+    label: "Type TB"
+  - name: "depense"
+    type: "number"
+    label: "Dépense"
+    decimals: 2
+    decimalSeparator: ","
+    thousandsSeparator: " "
+  - name: "recette"
+    type: "number"
+    label: "Recette"
+    decimals: 2
+    decimalSeparator: ","
+    thousandsSeparator: " "
+  - name: "solde"
+    type: "number"
+    label: "Solde"
+    decimals: 2
+    decimalSeparator: ","
+    thousandsSeparator: " "
+    readonly: true # Supposons que le solde est calculé
+
+forms:
+  - name: "regroupementList"
+    type: "list"
+    entity: "regroupement"
+    config:
+      pageSize: 10
+      defaultSortField: "id"
+      defaultSortOrder: "asc"
+      pageSizeOptions: [5, 10, 25, 50]
+      columns: ["id", "libelle"]
+      searchableFields: ["id", "libelle"]
+      sortableFields: ["id", "libelle"]
+      labels:
+        title: "Liste des regroupements"
+      buttonFontSize: "0.75rem"
+      paginationButtonFontSize: "0.875rem"
+      paginationTextFontSize: "0.875rem"
+
+  - name: "regroupementFiche"
+    type: "fiche"
+    entity: "regroupement"
+    config:
+      tabInactiveBackgroundColor: "#e9ecef"
+      tabActiveBackgroundColor: "#ffffff"
+      tabContentBackgroundColor: "#ffffff"
+      labelColumnWidth: "25%"
+      tabLabelFontSize: "1rem"
+      buttonFontSize: "1rem"
+      formActionButtonsFontSize: "1rem"
+      formContentMaxHeightAdjustment: "200px"
+      groups:
+        - name: "Informations Générales"
+          fields:
+            - name: "id"
+              align: "right"
+            - name: "libelle"
+              size: 50
+        - name: "Types de Regroupement"
+          fields:
+            - name: "type_categorie"
+            - name: "type_poste"
+            - name: "type_tb"
+        - name: "Montants"
+          fields:
+            - name: "depense"
+              size: 15
+              decimals: 2
+              decimalSeparator: ","
+              thousandsSeparator: " "
+              align: "right"
+            - name: "recette"
+              size: 15
+              decimals: 2
+              decimalSeparator: ","
+              thousandsSeparator: " "
+              align: "right"
+            - name: "solde"
+              size: 15
+              decimals: 2
+              decimalSeparator: ","
+              thousandsSeparator: " "
+              align: "right"
+              readonly: true # Règle de présentation : non modifiable dans ce formulaire
+      labels:
+        titleCreate: "Création d’un regroupement"
+        titleUpdate: "Édition d’un regroupement"
+        submitCreate: "Créer"
+        submitUpdate: "Enregistrer"
+        cancel: "Annuler"

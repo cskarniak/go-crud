@@ -4,18 +4,18 @@
    BLOC DE CONFIGURATION SPÉCIFIQUE À LA FICHE CATÉGORIE
 ===================================================== */
 :root {
-  --form-categorie-bg-color: #d1cece;
+  --form-categorie-bg-color: transparent; /* Changé de #d1cece à transparent */
   --form-categorie-border-color: #dee2e6;
   --form-categorie-shadow-color: rgba(0, 0, 0, 0.05);
 }
 /* ===================================================== */
 
 form {
-  background-color: var(--form-categorie-bg-color);
-  border: 1px solid var(--form-categorie-border-color);
-  box-shadow: 0 2px 6px var(--form-categorie-shadow-color);
+  background-color: var(--form-categorie-bg-color); /* Correction de la syntaxe */
+  /* border: 1px solid var(--form-categorie-border-color); */ /* Commenté */
+  /* box-shadow: 0 2px 6px var(--form-categorie-shadow-color); */ /* Commenté */
   
   /* Les autres propriétés (padding, border-radius) ne changent pas */
-  padding: 1.5rem;
+  /* padding: 1.5rem; */ /* Commenté */
   border-radius: 0.5rem;
 }

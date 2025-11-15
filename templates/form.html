@@ -19,8 +19,16 @@
   <link href="/assets/css/popup/popup.css" rel="stylesheet">
   <!-- CSS d'override spécifique à la popup de cette fiche -->
   <link href="/assets/css/popup/{{ .Entity.Fiche.Name }}-overrides.css" rel="stylesheet">
-</head><body>
-  <div class="card form-card shadow-sm mt-4">
+</head>
+<body style="background-color: {{ with .Entity.Fiche.PageBackgroundColor }}{{ . }}{{ else }}#f8f9fa{{ end }};">
+  {{- $width := "800px" -}}
+  {{- if .Entity.Fiche.Width }}{{ $width = .Entity.Fiche.Width }}{{ end -}}
+  {{- $maxWidth := "100%" -}}
+  {{- if .Entity.Fiche.MaxWidth }}{{ $maxWidth = .Entity.Fiche.MaxWidth }}{{ end -}}
+  {{- $bgColor := "white" -}}
+  {{- if .Entity.Fiche.FormBackgroundColor }}{{ $bgColor = .Entity.Fiche.FormBackgroundColor }}{{ end -}}
+  <div class="card form-card shadow-sm mt-4"
+       style="width: {{ $width }}; max-width: {{ $maxWidth }}; background-color: {{ $bgColor }};">
     <div class="card-header bg-primary text-white py-2">
       <h5 class="mb-0 text-center">
         {{ if eq .Mode "new" }}
@@ -44,10 +52,17 @@
                   /{{ .Entity.Fiche.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
                 {{ else }}
                   /{{ .Entity.Fiche.Name }}/update/{{ index $.DataRow "id" }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}
-                {{ end }}'>
+                {{ end }}'
+            style="--label-col-width: {{ with .Entity.Fiche.LabelColumnWidth }}{{ . }}{{ else }}25%{{ end }};
+                   --form-action-button-font-size: {{ with .Entity.Fiche.FormActionButtonsFontSize }}{{ . }}{{ else }}1rem{{ end }};
+                   --form-content-max-height-adjustment: {{ with .Entity.Fiche.FormContentMaxHeightAdjustment }}{{ . }}{{ else }}200px{{ end }};">
 
         <!-- Navigation des onglets -->
-        <ul class="nav nav-tabs" id="formTab" role="tablist">
+        <ul class="nav nav-tabs" id="formTab" role="tablist"
+            style="--tab-inactive-bg: {{ with .Entity.Fiche.TabInactiveBackgroundColor }}{{ . }}{{ else }}#e9ecef{{ end }};
+                   --tab-active-bg: {{ with .Entity.Fiche.TabActiveBackgroundColor }}{{ . }}{{ else }}#ffffff{{ end }};
+                   --tab-content-bg: {{ with .Entity.Fiche.TabContentBackgroundColor }}{{ . }}{{ else }}#ffffff{{ end }};
+                   --tab-label-font-size: {{ with .Entity.Fiche.TabLabelFontSize }}{{ . }}{{ else }}1rem{{ end }};">
           {{ range $index, $group := .Entity.Fiche.Groups }}
             <li class="nav-item" role="presentation">
               <button class="nav-link {{ if eq $index 0 }}active{{ end }}" id="tab-{{ $index }}-tab" data-bs-toggle="tab" data-bs-target="#tab-{{ $index }}" type="button" role="tab" aria-controls="tab-{{ $index }}" aria-selected="{{ if eq $index 0 }}true{{ else }}false{{ end }}">{{ .Name }}</button>
@@ -57,19 +72,18 @@
 
         <!-- Contenu des onglets -->
         <div class="tab-content" id="formTabContent">
-          {{ range $index, $group := .Entity.Fiche.Groups }}
-            <div class="tab-pane fade {{ if eq $index 0 }}show active{{ end }} p-3" id="tab-{{ $index }}" role="tabpanel" aria-labelledby="tab-{{ $index }}-tab">
+          {{ range $groupIndex, $group := .Entity.Fiche.Groups }}
+            <div class="tab-pane fade {{ if eq $groupIndex 0 }}show active{{ end }}" id="tab-{{ $groupIndex }}" role="tabpanel" aria-labelledby="tab-{{ $groupIndex }}-tab">
               
-              {{ range .Fields }}
-                {{ $formField := . }}
+              {{ range $fieldIndex, $formField := .Fields }}
                 {{ $fieldDef := (index $.Entity.FieldsByName $formField.Name) }}
 
                 {{ if $fieldDef }}
-                  <div class="row mb-3 align-items-center">
-                    <label for="{{ $formField.Name }}" class="col-sm-3 col-form-label fw-bold">
+                  <div class="row mb-3 align-items-center {{ if eq $fieldIndex 0 }}mt-4{{ end }}">
+                    <label for="{{ $formField.Name }}" class="label-col col-form-label fw-bold">
                       {{ $fieldDef.Label }}
                     </label>
-                    <div class="col-sm-9">
+                    <div class="field-col">
 
                       {{ $isReadOnly := or $fieldDef.ReadOnly $formField.ReadOnly }}
 
@@ -81,11 +95,12 @@
                           {{ end }}
                         </select>
 
-                      {{ else if eq $formField.Type "vision" }}
+                      {{ else if $formField.VisionConfig }}
                         <!-- vision input + modal -->
                         <div class="d-flex">
                           <input type="text" id="{{ $formField.Name }}" name="{{ $formField.Name }}" readonly class="form-control me-2{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" value="{{ index $.DataRow $formField.Name }}">
-                          <button type="button" class="btn-clode btn-close-whiteoutline-primary" data-bs-toggle="modal" data-bs-target="#modal-{{ $formField.Name }}" {{ if $isReadOnly }}disabled{{ end }}>…</button>
+                          <button type="button" class="btn btn-outline-secondary vision-button" 
+                                    data-bs-toggle="modal" data-bs-target="#modal-{{ $formField.Name }}" {{ if $isReadOnly }}disabled{{ end }}>…</button>
                         </div>
 
                         <!-- Modal générique vision -->
@@ -171,8 +186,9 @@
                         <div class="input-group">
                           {{- /* Préparation des classes et attributs */ -}}
                           {{- $alignClass := "" -}}
-                          {{- with $formField.Align -}}
-                            {{- $alignClass = printf " text-%s" . -}}
+                          {{- if eq $formField.Align "right" }}{{ $alignClass = " text-end" }}
+                          {{- else if eq $formField.Align "center" }}{{ $alignClass = " text-center" }}
+                          {{- else if eq $formField.Align "left" }}{{ $alignClass = " text-start" }}
                           {{- end -}}
                           {{- $errorClass := "" -}}
                           {{- if index $.Errors $formField.Name }}{{- $errorClass = " is-invalid" -}}{{ end -}}
@@ -182,17 +198,16 @@
 
                           <input type="text" id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="{{ $finalClasses }}" value="{{ index $.DataRow $formField.Name }}"
                             {{- if $isReadOnly }} readonly{{ end }}
-                            {{- with $formField.MaxLength }} maxlength="{{ . }}"
-                            {{- else }}{{ if gt $fieldDef.MaxLength 0 }} maxlength="{{ $fieldDef.MaxLength }}"{{ end }}{{ end }}
-                            {{- with $formField.Size }} size="{{ . }}"{{ end }}
+                            {{- if gt $formField.MaxLength 0 }} maxlength="{{ $formField.MaxLength }}"
+                            {{- else if gt $fieldDef.MaxLength 0 }} maxlength="{{ $fieldDef.MaxLength }}"{{ end }}
+                            {{- if gt $formField.Size 0 }} size="{{ $formField.Size }}"{{ end }}
                             {{- if $.Code }}{{ with index $.Code.FrontValidations $formField.Name }}
                               {{- if .Required }} required{{ end }}
                               {{- if .Pattern }} pattern="{{ .Pattern }}" title="{{ .Title }}"{{ end }}
                             {{- end }}{{ end }}>
                           
                           {{ if $formField.VisionButton }}
-                            <button class="btn btn-outline-secondary vision-button" 
-                                    type="button"
+                            <button type="button" class="btn btn-outline-secondary vision-button" 
                                     data-vision-form="{{ $formField.VisionButton }}"
                                     data-field-name="{{ $formField.Name }}">
                               👁️

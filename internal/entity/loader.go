@@ -61,23 +61,24 @@ type VisionFormConfig struct {
 	DefaultSortOrder string            `yaml:"defaultSortOrder"`
 	PageSize         int               `yaml:"pageSize"`
 	PageSizeOptions  []int             `yaml:"pageSizeOptions"`
+	// Temporary comment to force re-parsing
 }
 
 // FieldDef représente un champ dans un formulaire (fiche)
 type FieldDef struct {
 	Name               string             `yaml:"name"`
 	Type               string             `yaml:"type,omitempty"`
-	ReadOnly           bool               `yaml:"readonly,omitempty"` // Ajout de ReadOnly
+	ReadOnly           bool               `yaml:"readonly,omitempty"`
 	ComboConfig        *ComboFieldConfig  `yaml:"comboConfig,omitempty"`
 	VisionConfig       *VisionFieldConfig `yaml:"visionConfig,omitempty"`
 	VisionButton       string             `yaml:"visionButton,omitempty"`
-	MaxLength          *int               `yaml:"maxLength,omitempty"`
-	Size               *int               `yaml:"size,omitempty"`
+	MaxLength          int                `yaml:"maxLength,omitempty"`
+	Size               int                `yaml:"size,omitempty"`
 	Rows               int                `yaml:"rows,omitempty"`
-	Decimals           *int               `yaml:"decimals,omitempty"`
-	DecimalSeparator   *string            `yaml:"decimalSeparator,omitempty"`
-	ThousandsSeparator *string            `yaml:"thousandsSeparator,omitempty"`
-	Align              *string            `yaml:"align,omitempty"`
+	Decimals           int                `yaml:"decimals,omitempty"`
+	DecimalSeparator   string             `yaml:"decimalSeparator,omitempty"`
+	ThousandsSeparator string             `yaml:"thousandsSeparator,omitempty"`
+	Align              string             `yaml:"align,omitempty"`
 }
 
 func (f *FieldDef) UnmarshalYAML(node *yaml.Node) error {
@@ -104,22 +105,43 @@ type Group struct {
 
 // FicheConfig configuration pour la fiche
 type FicheConfig struct {
-	Name   string            `yaml:"name"`
-	Groups []Group           `yaml:"groups"`
-	Labels map[string]string `yaml:"labels"`
+	Name                       string            `yaml:"name"`
+	Groups                     []Group           `yaml:"groups"`
+	Labels                     map[string]string `yaml:"labels"`
+	Width                      string            `yaml:"width,omitempty"`
+	MaxWidth                   string            `yaml:"maxWidth,omitempty"` // Ajout du champ MaxWidth
+	FormBackgroundColor        string            `yaml:"formBackgroundColor,omitempty"`
+	PageBackgroundColor        string            `yaml:"pageBackgroundColor,omitempty"`
+	TabInactiveBackgroundColor string            `yaml:"tabInactiveBackgroundColor,omitempty"` // Nouveau champ
+	TabActiveBackgroundColor   string            `yaml:"tabActiveBackgroundColor,omitempty"`   // Nouveau champ
+	TabContentBackgroundColor  string            `yaml:"tabContentBackgroundColor,omitempty"`  // Nouveau champ
+	LabelColumnWidth           string            `yaml:"labelColumnWidth,omitempty"`           // Nouveau champ
+	TabLabelFontSize           string            `yaml:"tabLabelFontSize,omitempty"`           // Nouveau champ
+	ButtonFontSize             string            `yaml:"buttonFontSize,omitempty"`             // Nouveau champ
+	FormActionButtonsFontSize  string            `yaml:"formActionButtonsFontSize,omitempty"`  // Nouveau champ
+	FormContentMaxHeightAdjustment string        `yaml:"formContentMaxHeightAdjustment,omitempty"` // Nouveau champ
 }
 
 // ListConfig configuration pour la liste
 type ListConfig struct {
-	Name             string            `yaml:"name"`
-	PageSize         int               `yaml:"pageSize"`
-	DefaultSortField string            `yaml:"defaultSortField"`
-	DefaultSortOrder string            `yaml:"defaultSortOrder"`
-	PageSizeOptions  []int             `yaml:"pageSizeOptions"`
-	Columns          []string          `yaml:"columns"`
-	SearchableFields []string          `yaml:"searchableFields"`
-	SortableFields   []string          `yaml:"sortableFields"`
-	Labels           map[string]string `yaml:"labels"`
+	Name                       string            `yaml:"name"`
+	PageSize                   int               `yaml:"pageSize"`
+	DefaultSortField           string            `yaml:"defaultSortField"`
+	DefaultSortOrder           string            `yaml:"defaultSortOrder"`
+	PageSizeOptions            []int             `yaml:"pageSizeOptions"`
+	Columns                    []string          `yaml:"columns"`
+	SearchableFields           []string          `yaml:"searchableFields"`
+	SortableFields             []string          `yaml:"sortableFields"`
+	Labels                     map[string]string `yaml:"labels"`
+	Width                      string            `yaml:"width,omitempty"`
+	MaxWidth                   string            `yaml:"maxWidth,omitempty"`                   // Nouveau champ
+	FormBackgroundColor        string            `yaml:"formBackgroundColor,omitempty"`
+	PageBackgroundColor        string            `yaml:"pageBackgroundColor,omitempty"`
+	ButtonFontSize             string            `yaml:"buttonFontSize,omitempty"`             // Nouveau champ pour les listes
+	PaginationButtonFontSize   string            `yaml:"paginationButtonFontSize,omitempty"`   // Nouveau champ
+	PaginationTextFontSize     string            `yaml:"paginationTextFontSize,omitempty"`     // Nouveau champ
+	ColumnWidths               []string          `yaml:"columnWidths,omitempty"`               // Nouveau champ
+	ColumnHeaderFontSize       string            `yaml:"columnHeaderFontSize,omitempty"`       // Nouveau champ pour la taille de police des en-têtes de colonne
 }
 
 // Field décrit un champ d'entité (modèle de données)
@@ -132,6 +154,7 @@ type Field struct {
 	Default       interface{}
 	DisplayFormat string
 	MaxLength     int
+	Align         string `yaml:"align,omitempty"` // Ajout de la propriété Align
 }
 
 // EntityConfig regroupe tout le config d’une entité
@@ -168,6 +191,7 @@ type yamlEntity struct {
 		Default       interface{} `yaml:"default,omitempty"`
 		DisplayFormat string      `yaml:"displayFormat,omitempty"`
 		MaxLength     int         `yaml:"maxLength,omitempty"`
+		Align         string      `yaml:"align,omitempty"` // Ajout de la propriété Align
 	} `yaml:"fields"`
 	Forms []struct {
 		Name   string    `yaml:"name"`
@@ -196,7 +220,7 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 	}
 
 	for i, f := range y.Fields {
-		field := Field{f.Name, f.Label, f.Type, f.ReadOnly, f.Required, f.Default, f.DisplayFormat, f.MaxLength}
+		field := Field{f.Name, f.Label, f.Type, f.ReadOnly, f.Required, f.Default, f.DisplayFormat, f.MaxLength, f.Align} // Inclure f.Align
 		ec.Fields[i] = field
 		ec.FieldsByName[f.Name] = field
 	}

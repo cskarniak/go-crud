@@ -40,14 +40,17 @@
 
 /* -------- Carte de la liste (largeur et centrage) -------- */
 .list-card {
-  width: 50%;
-  max-width: 1200px;
+  /* width: 50%; */ /* Supprimé */
+  /* max-width: 1200px; */ /* Supprimé */
   margin: 2rem auto;
   overflow-x: auto;
 }
-@media (max-width: 1200px) { .list-card { width: 70%; } }
-@media (max-width: 768px) { .list-card { width: 90%; } }
-@media (max-width: 576px) { .list-card { width: 100%; margin: 1rem; } }
+/* Commenté les règles @media pour permettre le contrôle via YAML */
+
+@media (max-width: 1200px) { /* .list-card { width: 70%; } */ }
+@media (max-width: 768px) { /* .list-card { width: 90%; } */ }
+@media (max-width: 576px) { /* .list-card { width: 100%; margin: 1rem; } */ }
+
 
 /* -------- Barre d’outils -------- */
 .toolbar {
@@ -71,10 +74,9 @@
 }
 
 /* -------- Largeurs de colonnes -------- */
-.table-fixed th:nth-child(1), .table-fixed td:nth-child(1) { width: 50px; text-align: left; }
-.table-fixed th:nth-child(2), .table-fixed td:nth-child(2) { width: 150px; text-align: left; }
-/* Suppression de la règle nth-child(3) et ajout d'une règle pour la dernière colonne */
-.table-fixed th:last-child, .table-fixed td:last-child { width: 120px; text-align: center; }
+/* Supprimé : .table-fixed th:nth-child(1), .table-fixed td:nth-child(1) { width: 50px; text-align: left; } */
+/* Supprimé : .table-fixed th:nth-child(2), .table-fixed td:nth-child(2) { width: 150px; text-align: left; } */
+/* Supprimé : .table-fixed th:last-child, .table-fixed td:last-child { width: 120px; text-align: center; } */
 
 /* -------- Conteneur responsive du tableau -------- */
 .table-responsive {
@@ -88,7 +90,7 @@
   border-spacing: 0;
   border-radius: 0.5rem;
   box-shadow: 0 2px 6px var(--table-shadow-color);
-  background-color: var(--table-bg-color);
+  background-color: inherit; /* Changement ici */
 }
 .table thead {
   background-color: var(--table-header-bg-color);
@@ -98,7 +100,7 @@
   font-weight: 600;
   padding: 0.75rem 1rem;
   text-transform: uppercase;
-  font-size: 0.875rem;
+  font-size: var(--column-header-font-size, 0.875rem); /* Utilise la variable CSS */
   border: none;
 }
 .table td {
@@ -110,7 +112,7 @@
 .table tbody .btn {
   margin-right: 0.25rem !important;
   padding: 0.1rem 0.3rem !important;
-  font-size: 0.75rem !important;
+  font-size: var(--list-button-font-size, 0.75rem) !important; /* Utilise la variable CSS */
   line-height: 1.2 !important;
 }
 
@@ -156,6 +158,7 @@
   border-radius: 0.25rem;
   padding: 0.5rem 0.75rem;
   color: var(--pagination-link-color);
+  font-size: var(--pagination-button-font-size, 0.875rem); /* Utilise la variable CSS */
 }
 .pagination .page-item.active .page-link {
   background-color: var(--pagination-active-bg-color);
@@ -165,6 +168,11 @@
 .pagination .page-item.disabled .page-link {
   color: var(--pagination-disabled-link-color);
 }
+.pagination .page-item.disabled.mx-2 { /* Cible le texte "Page X sur Y" */
+  font-size: var(--pagination-text-font-size, 0.875rem); /* Utilise la variable CSS */
+  line-height: 1.5; /* Ajuste la hauteur de ligne pour l'alignement */
+}
+
 
 /* -------- Affichage mobile -------- */
 @media (max-width: 576px) {
@@ -195,4 +203,9 @@
   overflow: hidden;
   vertical-align: middle !important;
   font-size: 12px; /* Police taille 12px */
+}
+
+/* Règle générale pour les boutons dans la vue liste */
+.list-card .btn {
+  font-size: var(--list-button-font-size, 0.75rem) !important; /* Applique la variable à tous les boutons de la liste */
 }

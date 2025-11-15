@@ -10,9 +10,19 @@
   <link href="/assets/css/list/{{ .Entity.List.Name }}-overrides.css" rel="stylesheet">
   {{ end }}
 </head>
-<body>
+<body style="background-color: {{ with .Entity.List.PageBackgroundColor }}{{ . }}{{ else }}#f8f9fa{{ end }};
+             --list-button-font-size: {{ with .Entity.List.ButtonFontSize }}{{ . }}{{ else }}1rem{{ end }};
+             --pagination-button-font-size: {{ with .Entity.List.PaginationButtonFontSize }}{{ . }}{{ else }}0.875rem{{ end }};
+             --pagination-text-font-size: {{ with .Entity.List.PaginationTextFontSize }}{{ . }}{{ else }}0.875rem{{ end }};
+             --column-header-font-size: {{ with .Entity.List.ColumnHeaderFontSize }}{{ . }}{{ else }}1rem{{ end }};">
 
-  <div class="list-card">
+  {{- $listCardWidth := "90%" -}}
+  {{- if .Entity.List.Width }}{{ $listCardWidth = .Entity.List.Width }}{{ end -}}
+  {{- $listCardMaxWidth := "1200px" -}}
+  {{- if .Entity.List.MaxWidth }}{{ $listCardMaxWidth = .Entity.List.MaxWidth }}{{ end -}}
+  {{- $bgColor := "white" -}}
+  {{- if .Entity.List.FormBackgroundColor }}{{ $bgColor = .Entity.List.FormBackgroundColor }}{{ end -}}
+  <div class="list-card" style="width: {{ $listCardWidth }}; max-width: {{ $listCardMaxWidth }}; background-color: {{ $bgColor }};">
     <div class="card shadow-sm">
       <div class="card-header bg-primary text-white">
         <h2 class="mb-0">
@@ -68,15 +78,32 @@
           <table class="table table-hover table-striped table-fixed table-bordered mb-0">
             <thead class="table-light">
               <tr>
-                {{ range .Columns }}
-                  <th scope="col">
-                    <a href="?page=1&pageSize={{ $.PageSize }}&sort={{ . }}&order={{ if and (eq $.SortField .) (eq $.SortOrder "asc") }}desc{{ else }}asc{{ end }}&search={{ $.Search }}" class="link-dark text-decoration-none">
-                      {{ . }}
-                      {{ if eq $.SortField . }}{{ if eq $.SortOrder "asc" }}▲{{ else }}▼{{ end }}{{ end }}
+                {{- $numColWidths := len $.Entity.List.ColumnWidths -}}
+                {{ range $colIndex, $colName := .Columns }}
+                  {{- $colWidth := "auto" -}}
+                  {{- if and (gt $numColWidths $colIndex) (gt $numColWidths 0) -}}
+                    {{- $colWidth = index $.Entity.List.ColumnWidths $colIndex -}}
+                  {{- end -}}
+                  {{- $alignClassHeader := "" -}}
+                  {{- $fieldHeader := index $.Entity.FieldsByName $colName -}} {{/* Use Field for header alignment */}}
+                  {{- if $fieldHeader -}}
+                    {{- if eq $fieldHeader.Align "right" }}{{ $alignClassHeader = "text-end" }}
+                    {{- else if eq $fieldHeader.Align "center" }}{{ $alignClassHeader = "text-center" }}
+                    {{- else if eq $fieldHeader.Align "left" }}{{ $alignClassHeader = "text-start" }}
+                    {{- end -}}
+                  {{- end -}}
+                  <th scope="col" class="{{ $alignClassHeader }}" style="width: {{ $colWidth }}; font-size: var(--column-header-font-size);">
+                    <a href="?page=1&pageSize={{ $.PageSize }}&sort={{ $colName }}&order={{ if and (eq $.SortField $colName) (eq $.SortOrder "asc") }}desc{{ else }}asc{{ end }}&search={{ $.Search }}" class="link-dark text-decoration-none">
+                      {{ $colName }}
+                      {{ if eq $.SortField $colName }}{{ if eq $.SortOrder "asc" }}▲{{ else }}▼{{ end }}{{ end }}
                     </a>
                   </th>
                 {{ end }}
-                <th scope="col">Actions</th>
+                {{- $actionColWidth := "auto" -}}
+                {{- if gt $numColWidths (len .Columns) -}}
+                  {{- $actionColWidth = index $.Entity.List.ColumnWidths (len .Columns) -}}
+                {{- end -}}
+                <th scope="col" class="text-center" style="width: {{ $actionColWidth }}; font-size: var(--column-header-font-size);">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -91,19 +118,30 @@
               {{ range .Data }}
                 {{ $row := . }}
                 <tr data-id="{{ index $row "id" }}" class="{{ if and $.IsVisionReturn $.AllowSelectable }}vision-return-row{{ end }} {{ if index $row "_highlight" }}highlight-row{{ end }}">
-                  {{ range $.Columns }}
-                    {{ $currentColumnName := . }}
+                  {{ range $colIndex, $colName := $.Columns }}
                     {{ $alignClass := "" }}
-                    {{ range $.Entity.Fields }}
-                        {{ if eq .Name $currentColumnName }}
-                            {{ if .Align }}
-                                {{ $alignClass = printf "text-%s" .Align }}
-                            {{ end }}
-                        {{ end }}
-                    {{ end }}
-                    <td data-label="{{ . }}" class="{{ $alignClass }}">{{ index $row . }}</td>
+                    {{- $field := index $.Entity.FieldsByName $colName -}}        {{/* For field type and alignment */}}
+                    {{- if $field -}}
+                      {{- if eq $field.Align "right" }}{{ $alignClass = "text-end" }}
+                      {{- else if eq $field.Align "center" }}{{ $alignClass = "text-center" }}
+                      {{- else if eq $field.Align "left" }}{{ $alignClass = "text-start" }}
+                      {{- end -}}
+                    {{- end -}}
+                    {{- $colWidth := "auto" -}}
+                    {{- if and (gt $numColWidths $colIndex) (gt $numColWidths 0) -}}
+                      {{- $colWidth = index $.Entity.List.ColumnWidths $colIndex -}}
+                    {{- end -}}
+                    <td data-label="{{ $colName }}" class="{{ $alignClass }}" style="width: {{ $colWidth }};">
+                      {{- if and $field (eq $field.Type "boolean") -}}
+                        <div class="text-center">
+                          <input type="checkbox" disabled {{ if index $row $colName }}checked{{ end }}>
+                        </div>
+                      {{- else -}}
+                        {{ index $row $colName }}
+                      {{- end -}}
+                    </td>
                   {{ end }}
-                  <td>
+                  <td class="text-center" style="width: {{ $actionColWidth }};">
                     {{- if $allowUpdate -}}
                     <a href="/{{ $.Entity.Fiche.Name }}/edit/{{ index $row "id" }}?page={{ $.Page }}&pageSize={{ $.PageSize }}&sort={{ $.SortField }}&order={{ $.SortOrder }}" class="btn btn-sm btn-primary me-1">Éditer</a>
                     {{- end -}}
