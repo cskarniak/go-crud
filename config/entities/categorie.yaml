@@ -10,79 +10,55 @@ fields:
     type: "uint"
     label: "ID"
     readonly: true
-    align: "center" # Ajout de l'alignement pour les listes et fiches
   - name: "libelle"
     type: "string"
     label: "Libellé"
     maxLength: 255
     required: true
-    align: "left" # Ajout de l'alignement
   - name: "sens"
     type: "boolean"
     label: "Sens"
-    align: "center" # Ajout de l'alignement
   - name: "CodeRegroupement"
     type: "boolean"
     label: "Code Regroupement"
-    align: "center" # Ajout de l'alignement
   - name: "commentaire"
     type: "string"
     label: "Commentaire"
     maxLength: 500
-    align: "left" # Ajout de l'alignement
   - name: "desactive"
     type: "boolean"
     label: "Désactivé"
-    align: "center" # Ajout de l'alignement
 
 forms:
   - name: "categorieList"
     type: "list"
     entity: "categorie"
     config:
-      width: "80%" # Largeur du formulaire de liste
-      maxWidth: "800px" # Largeur maximale du formulaire de liste
-      columnHeaderFontSize: "0.75rem"
-      pageSize: 10
-      defaultSortField: "id"
-      defaultSortOrder: "asc"
-      pageSizeOptions: [5, 10, 25, 50]
+      title: "Liste des catégories" # Surcharge du titre par défaut
       columns:
         - "id"
         - "libelle"
         - "desactive"
-
-      columnWidths: ["80px", "auto","100px","160px"] # Largeurs correspondante
+      columnAlignments: ["center", "left", "center"]
+      columnWidths: ["80px", "auto", "100px", "160px"]
       searchableFields: ["id", "libelle"]
       sortableFields: ["id", "libelle"]
-      labels:
-        title: "Liste des catégories"
-      buttonFontSize: "0.75rem"
-      paginationButtonFontSize: "0.875rem"
-      paginationTextFontSize: "0.875rem"
 
   - name: "categorieFiche"
     type: "fiche"
     entity: "categorie"
     config:
-      width: "100%"
-      maxWidth: "700px"
-      tabInactiveBackgroundColor: "#e9ecef"
-      tabActiveBackgroundColor: "#ffffff"
-      tabContentBackgroundColor: "#ffffff"
-      labelColumnWidth: "25%"
-      tabLabelFontSize: "1rem"
-      buttonFontSize: "1rem"
-      formActionButtonsFontSize: "1rem"
-      formContentMaxHeightAdjustment: "200px" # Ajustement par défaut, à modifier si nécessaire
+      titles:
+        create: "Création d’une catégorie"
+        update: "Édition d’une catégorie"
+      
       groups:
         - name: "Informations Générales"
           fields:
             - name: "id"
-              size: 10
-              align: "right" # Cet alignement spécifique à la fiche prendra le pas sur l'alignement global pour la fiche
+              align: "right"
             - name: "libelle"
-              size: 20
+              size: 50
             - name: "commentaire"
               rows: 4
               size: 50
@@ -91,9 +67,3 @@ forms:
             - name: "sens"
             - name: "CodeRegroupement"
             - name: "desactive"
-      labels:
-        titleCreate: "Création d’une catégorie"
-        titleUpdate: "Édition d’une catégorie"
-        submitCreate: "Créer"
-        submitUpdate: "Enregistrer"
-        cancel: "Annuler"

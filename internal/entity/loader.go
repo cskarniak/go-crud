@@ -5,11 +5,28 @@ import (
 	"fmt"
 	"log"
 	"path/filepath"
+	"reflect"
 
 	"example.com/go-crud/config/form_codes"
 	"example.com/go-crud/config/loader"
 	"gopkg.in/yaml.v3"
 )
+
+// Variables globales pour stocker les configurations par défaut
+var (
+	defaultListConfig  ListConfig
+	defaultFicheConfig FicheConfig
+)
+
+// init est exécuté une seule fois au démarrage pour charger les configurations par défaut.
+func init() {
+	if err := loader.Load("config/defaults/list.yaml", &defaultListConfig); err != nil {
+		log.Printf("Attention : impossible de charger la configuration par défaut pour les listes : %v", err)
+	}
+	if err := loader.Load("config/defaults/fiche.yaml", &defaultFicheConfig); err != nil {
+		log.Printf("Attention : impossible de charger la configuration par défaut pour les fiches : %v", err)
+	}
+}
 
 // --- Types de config pour les champs de formulaire ---
 type ComboFieldConfig struct {
@@ -107,24 +124,26 @@ type Group struct {
 type FicheConfig struct {
 	Name                       string            `yaml:"name"`
 	Groups                     []Group           `yaml:"groups"`
-	Labels                     map[string]string `yaml:"labels"`
+	Titles                     map[string]string `yaml:"titles,omitempty"`      // NOUVEAU
+	ButtonLabels               map[string]string `yaml:"buttonLabels,omitempty"` // NOUVEAU
 	Width                      string            `yaml:"width,omitempty"`
-	MaxWidth                   string            `yaml:"maxWidth,omitempty"` // Ajout du champ MaxWidth
+	MaxWidth                   string            `yaml:"maxWidth,omitempty"`
 	FormBackgroundColor        string            `yaml:"formBackgroundColor,omitempty"`
 	PageBackgroundColor        string            `yaml:"pageBackgroundColor,omitempty"`
-	TabInactiveBackgroundColor string            `yaml:"tabInactiveBackgroundColor,omitempty"` // Nouveau champ
-	TabActiveBackgroundColor   string            `yaml:"tabActiveBackgroundColor,omitempty"`   // Nouveau champ
-	TabContentBackgroundColor  string            `yaml:"tabContentBackgroundColor,omitempty"`  // Nouveau champ
-	LabelColumnWidth           string            `yaml:"labelColumnWidth,omitempty"`           // Nouveau champ
-	TabLabelFontSize           string            `yaml:"tabLabelFontSize,omitempty"`           // Nouveau champ
-	ButtonFontSize             string            `yaml:"buttonFontSize,omitempty"`             // Nouveau champ
-	FormActionButtonsFontSize  string            `yaml:"formActionButtonsFontSize,omitempty"`  // Nouveau champ
-	FormContentMaxHeightAdjustment string        `yaml:"formContentMaxHeightAdjustment,omitempty"` // Nouveau champ
+	TabInactiveBackgroundColor string            `yaml:"tabInactiveBackgroundColor,omitempty"`
+	TabActiveBackgroundColor   string            `yaml:"tabActiveBackgroundColor,omitempty"`
+	TabContentBackgroundColor  string            `yaml:"tabContentBackgroundColor,omitempty"`
+	LabelColumnWidth           string            `yaml:"labelColumnWidth,omitempty"`
+	TabLabelFontSize           string            `yaml:"tabLabelFontSize,omitempty"`
+	ButtonFontSize             string            `yaml:"buttonFontSize,omitempty"`
+	FormActionButtonsFontSize  string            `yaml:"formActionButtonsFontSize,omitempty"`
+	FormContentMaxHeightAdjustment string        `yaml:"formContentMaxHeightAdjustment,omitempty"`
 }
 
 // ListConfig configuration pour la liste
 type ListConfig struct {
 	Name                       string            `yaml:"name"`
+	Title                      string            `yaml:"title,omitempty"` // NOUVEAU
 	PageSize                   int               `yaml:"pageSize"`
 	DefaultSortField           string            `yaml:"defaultSortField"`
 	DefaultSortOrder           string            `yaml:"defaultSortOrder"`
@@ -132,16 +151,16 @@ type ListConfig struct {
 	Columns                    []string          `yaml:"columns"`
 	SearchableFields           []string          `yaml:"searchableFields"`
 	SortableFields             []string          `yaml:"sortableFields"`
-	Labels                     map[string]string `yaml:"labels"`
 	Width                      string            `yaml:"width,omitempty"`
-	MaxWidth                   string            `yaml:"maxWidth,omitempty"`                   // Nouveau champ
+	MaxWidth                   string            `yaml:"maxWidth,omitempty"`
 	FormBackgroundColor        string            `yaml:"formBackgroundColor,omitempty"`
 	PageBackgroundColor        string            `yaml:"pageBackgroundColor,omitempty"`
-	ButtonFontSize             string            `yaml:"buttonFontSize,omitempty"`             // Nouveau champ pour les listes
-	PaginationButtonFontSize   string            `yaml:"paginationButtonFontSize,omitempty"`   // Nouveau champ
-	PaginationTextFontSize     string            `yaml:"paginationTextFontSize,omitempty"`     // Nouveau champ
-	ColumnWidths               []string          `yaml:"columnWidths,omitempty"`               // Nouveau champ
-	ColumnHeaderFontSize       string            `yaml:"columnHeaderFontSize,omitempty"`       // Nouveau champ pour la taille de police des en-têtes de colonne
+	ButtonFontSize             string            `yaml:"buttonFontSize,omitempty"`
+	PaginationButtonFontSize   string            `yaml:"paginationButtonFontSize,omitempty"`
+	PaginationTextFontSize     string            `yaml:"paginationTextFontSize,omitempty"`
+	ColumnWidths               []string          `yaml:"columnWidths,omitempty"`
+	ColumnHeaderFontSize       string            `yaml:"columnHeaderFontSize,omitempty"`
+	ColumnAlignments           []string          `yaml:"columnAlignments,omitempty"`
 }
 
 // Field décrit un champ d'entité (modèle de données)
@@ -154,7 +173,6 @@ type Field struct {
 	Default       interface{}
 	DisplayFormat string
 	MaxLength     int
-	Align         string `yaml:"align,omitempty"` // Ajout de la propriété Align
 }
 
 // EntityConfig regroupe tout le config d’une entité
@@ -191,13 +209,43 @@ type yamlEntity struct {
 		Default       interface{} `yaml:"default,omitempty"`
 		DisplayFormat string      `yaml:"displayFormat,omitempty"`
 		MaxLength     int         `yaml:"maxLength,omitempty"`
-		Align         string      `yaml:"align,omitempty"` // Ajout de la propriété Align
 	} `yaml:"fields"`
 	Forms []struct {
 		Name   string    `yaml:"name"`
 		Type   string    `yaml:"type"`
 		Config yaml.Node `yaml:"config"` // Utiliser yaml.Node pour un décodage flexible
 	} `yaml:"forms"`
+}
+
+// mergeWithDefaults fusionne une configuration spécifique avec une configuration par défaut.
+func mergeWithDefaults(specific, defaults interface{}) {
+	specVal := reflect.ValueOf(specific).Elem()
+	defVal := reflect.ValueOf(defaults)
+
+	for i := 0; i < specVal.NumField(); i++ {
+		specField := specVal.Field(i)
+		defField := defVal.Field(i)
+
+		// Gestion spéciale pour les maps
+		if specField.Kind() == reflect.Map {
+			if specField.IsNil() {
+				specField.Set(defField)
+			} else {
+				for _, key := range defField.MapKeys() {
+					// Si la clé du défaut n'existe pas dans le spécifique, on l'ajoute.
+					if specField.MapIndex(key).IsZero() {
+						specField.SetMapIndex(key, defField.MapIndex(key))
+					}
+				}
+			}
+			continue // Passer au champ suivant
+		}
+
+		// Comportement standard pour les autres champs
+		if specField.IsZero() {
+			specField.Set(defField)
+		}
+	}
 }
 
 // LoadEntityConfig lit et analyse la configuration d'une entité.
@@ -220,7 +268,7 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 	}
 
 	for i, f := range y.Fields {
-		field := Field{f.Name, f.Label, f.Type, f.ReadOnly, f.Required, f.Default, f.DisplayFormat, f.MaxLength, f.Align} // Inclure f.Align
+		field := Field{f.Name, f.Label, f.Type, f.ReadOnly, f.Required, f.Default, f.DisplayFormat, f.MaxLength}
 		ec.Fields[i] = field
 		ec.FieldsByName[f.Name] = field
 	}
@@ -233,6 +281,8 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 				return nil, fmt.Errorf("erreur décodage 'list' form %s: %w", form.Name, err)
 			}
 			listCfg.Name = form.Name
+			// Fusionner avec les valeurs par défaut
+			mergeWithDefaults(&listCfg, defaultListConfig)
 			ec.List = listCfg
 		case "fiche":
 			var ficheCfg FicheConfig
@@ -240,6 +290,8 @@ func LoadEntityConfig(path string) (*EntityConfig, error) {
 				return nil, fmt.Errorf("erreur décodage 'fiche' form %s: %w", form.Name, err)
 			}
 			ficheCfg.Name = form.Name
+			// Fusionner avec les valeurs par défaut
+			mergeWithDefaults(&ficheCfg, defaultFicheConfig)
 			ec.Fiche = ficheCfg
 		case "vision":
 			var visionCfg VisionFormConfig

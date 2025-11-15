@@ -71,7 +71,7 @@ forms:
       labelColumnWidth: "25%"               # Largeur par défaut de la colonne des libellés
       tabLabelFontSize: "0.85rem"              # Taille de police par défaut des libellés d'onglets
       buttonFontSize: "1rem"                # Taille de police par défaut des boutons généraux de fiche
-      formActionButtonsFontSize: "1rem"     # Taille de police par défaut des boutons d'action (Enregistrer/Annuler)
+      formActionButtonsFontSize: "0.75rem"     # Taille de police par défaut des boutons d'action (Enregistrer/Annuler)
       formContentMaxHeightAdjustment: "200px" # Ajusté à une valeur plus réaliste
       groups:
         - name: "Infos principales"

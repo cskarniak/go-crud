@@ -1,0 +1,25 @@
+# config/defaults/list.yaml
+# Ce fichier contient les valeurs de présentation et de comportement par défaut pour tous les formulaires de type 'list'.
+
+# --- Titre ---
+title: "Liste" # Titre par défaut qui sera affiché en haut de la liste.
+
+# --- Dimensions ---
+width: "90%"
+maxWidth: "800px"
+
+# --- Couleurs ---
+pageBackgroundColor: "#f8f9fa"
+formBackgroundColor: "#ffffff"
+
+# --- Polices ---
+buttonFontSize: "0.8rem"
+paginationButtonFontSize: "0.8rem"
+paginationTextFontSize: "0.8rem"
+columnHeaderFontSize: "0.9rem"
+
+# --- Comportement ---
+pageSize: 10
+defaultSortField: "id"
+defaultSortOrder: "asc"
+pageSizeOptions: [5, 10, 25, 50]

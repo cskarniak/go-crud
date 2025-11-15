@@ -42,45 +42,39 @@ fields:
     decimals: 2
     decimalSeparator: ","
     thousandsSeparator: " "
-    readonly: true # Supposons que le solde est calculé
+    readonly: true
 
 forms:
   - name: "regroupementList"
     type: "list"
     entity: "regroupement"
     config:
-      pageSize: 10
-      defaultSortField: "id"
-      defaultSortOrder: "asc"
-      pageSizeOptions: [5, 10, 25, 50]
+      title: "Liste des regroupements"
       columns: ["id", "libelle"]
+      columnAlignments: ["center", "left", "right"]
+      columnWidths: ["80px", "auto", "160px"]
       searchableFields: ["id", "libelle"]
       sortableFields: ["id", "libelle"]
-      labels:
-        title: "Liste des regroupements"
-      buttonFontSize: "0.75rem"
-      paginationButtonFontSize: "0.875rem"
-      paginationTextFontSize: "0.875rem"
 
   - name: "regroupementFiche"
     type: "fiche"
     entity: "regroupement"
     config:
-      tabInactiveBackgroundColor: "#e9ecef"
-      tabActiveBackgroundColor: "#ffffff"
-      tabContentBackgroundColor: "#ffffff"
-      labelColumnWidth: "25%"
-      tabLabelFontSize: "1rem"
-      buttonFontSize: "1rem"
-      formActionButtonsFontSize: "1rem"
-      formContentMaxHeightAdjustment: "200px"
+      maxWidth: "700px"
+      
+      titles:
+        create: "Création d’un regroupement"
+        update: "Édition d’un regroupement"
+
       groups:
         - name: "Informations Générales"
           fields:
             - name: "id"
               align: "right"
+              size: 10
             - name: "libelle"
               size: 50
+              rows: 4
         - name: "Types de Regroupement"
           fields:
             - name: "type_categorie"
@@ -106,10 +100,4 @@ forms:
               decimalSeparator: ","
               thousandsSeparator: " "
               align: "right"
-              readonly: true # Règle de présentation : non modifiable dans ce formulaire
-      labels:
-        titleCreate: "Création d’un regroupement"
-        titleUpdate: "Édition d’un regroupement"
-        submitCreate: "Créer"
-        submitUpdate: "Enregistrer"
-        cancel: "Annuler"
+              readonly: true

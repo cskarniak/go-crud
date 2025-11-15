@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>{{ .Entity.LabelPlural }}</title>
+  <title>{{ .Entity.List.Title }}</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="/assets/css/style.css" rel="stylesheet">
   <link href="/assets/css/list/list.css" rel="stylesheet">
@@ -25,14 +25,7 @@
   <div class="list-card" style="width: {{ $listCardWidth }}; max-width: {{ $listCardMaxWidth }}; background-color: {{ $bgColor }};">
     <div class="card shadow-sm">
       <div class="card-header bg-primary text-white">
-        <h2 class="mb-0">
-          {{- /* Le titre vient de la config Vision si elle existe, sinon de la config List */ -}}
-          {{- if .VisionConfig -}}
-            {{- with index .VisionConfig.Labels "title" }}{{ . }}{{ else }}{{ .Entity.LabelPlural }}{{ end -}}
-          {{- else -}}
-            {{- with index .Entity.List.Labels "title" }}{{ . }}{{ else }}{{ .Entity.LabelPlural }}{{ end -}}
-          {{- end -}}
-        </h2>
+        <h2 class="mb-0">{{ .Entity.List.Title }}</h2>
       </div>
       <div class="card-body">
 
@@ -79,17 +72,18 @@
             <thead class="table-light">
               <tr>
                 {{- $numColWidths := len $.Entity.List.ColumnWidths -}}
+                {{- $numColAligns := len $.Entity.List.ColumnAlignments -}}
                 {{ range $colIndex, $colName := .Columns }}
                   {{- $colWidth := "auto" -}}
                   {{- if and (gt $numColWidths $colIndex) (gt $numColWidths 0) -}}
                     {{- $colWidth = index $.Entity.List.ColumnWidths $colIndex -}}
                   {{- end -}}
                   {{- $alignClassHeader := "" -}}
-                  {{- $fieldHeader := index $.Entity.FieldsByName $colName -}} {{/* Use Field for header alignment */}}
-                  {{- if $fieldHeader -}}
-                    {{- if eq $fieldHeader.Align "right" }}{{ $alignClassHeader = "text-end" }}
-                    {{- else if eq $fieldHeader.Align "center" }}{{ $alignClassHeader = "text-center" }}
-                    {{- else if eq $fieldHeader.Align "left" }}{{ $alignClassHeader = "text-start" }}
+                  {{- if and (gt $numColAligns $colIndex) (gt $numColAligns 0) -}}
+                    {{- $align := index $.Entity.List.ColumnAlignments $colIndex -}}
+                    {{- if eq $align "right" }}{{ $alignClassHeader = "text-end" }}
+                    {{- else if eq $align "center" }}{{ $alignClassHeader = "text-center" }}
+                    {{- else if eq $align "left" }}{{ $alignClassHeader = "text-start" }}
                     {{- end -}}
                   {{- end -}}
                   <th scope="col" class="{{ $alignClassHeader }}" style="width: {{ $colWidth }}; font-size: var(--column-header-font-size);">
@@ -120,11 +114,11 @@
                 <tr data-id="{{ index $row "id" }}" class="{{ if and $.IsVisionReturn $.AllowSelectable }}vision-return-row{{ end }} {{ if index $row "_highlight" }}highlight-row{{ end }}">
                   {{ range $colIndex, $colName := $.Columns }}
                     {{ $alignClass := "" }}
-                    {{- $field := index $.Entity.FieldsByName $colName -}}        {{/* For field type and alignment */}}
-                    {{- if $field -}}
-                      {{- if eq $field.Align "right" }}{{ $alignClass = "text-end" }}
-                      {{- else if eq $field.Align "center" }}{{ $alignClass = "text-center" }}
-                      {{- else if eq $field.Align "left" }}{{ $alignClass = "text-start" }}
+                    {{- if and (gt $numColAligns $colIndex) (gt $numColAligns 0) -}}
+                      {{- $align := index $.Entity.List.ColumnAlignments $colIndex -}}
+                      {{- if eq $align "right" }}{{ $alignClass = "text-end" }}
+                      {{- else if eq $align "center" }}{{ $alignClass = "text-center" }}
+                      {{- else if eq $align "left" }}{{ $alignClass = "text-start" }}
                       {{- end -}}
                     {{- end -}}
                     {{- $colWidth := "auto" -}}
@@ -132,6 +126,7 @@
                       {{- $colWidth = index $.Entity.List.ColumnWidths $colIndex -}}
                     {{- end -}}
                     <td data-label="{{ $colName }}" class="{{ $alignClass }}" style="width: {{ $colWidth }};">
+                      {{- $field := index $.Entity.FieldsByName $colName -}}
                       {{- if and $field (eq $field.Type "boolean") -}}
                         <div class="text-center">
                           <input type="checkbox" disabled {{ if index $row $colName }}checked{{ end }}>

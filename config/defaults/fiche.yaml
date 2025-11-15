@@ -1,0 +1,32 @@
+# config/defaults/fiche.yaml
+# Ce fichier contient les valeurs de présentation par défaut pour tous les formulaires de type 'fiche'.
+
+# --- Dimensions ---
+width: "100%"
+maxWidth: "800px"
+
+# --- Couleurs ---
+pageBackgroundColor: "#f8f9fa"
+formBackgroundColor: "#ffffff"
+tabInactiveBackgroundColor: "#e9ecef"
+tabActiveBackgroundColor: "#ffffff"
+tabContentBackgroundColor: "#ffffff"
+
+# --- Layout ---
+labelColumnWidth: "25%"
+formContentMaxHeightAdjustment: "200px"
+
+# --- Polices ---
+tabLabelFontSize: "1rem"
+buttonFontSize: "1rem"
+formActionButtonsFontSize: "0.75rem"
+
+# --- Libellés ---
+titles:
+  create: "Nouveau"
+  update: "Édition"
+
+buttonLabels:
+  submitCreate: "Créer"
+  submitUpdate: "Enregistrer"
+  cancel: "Annuler"

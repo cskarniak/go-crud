@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <title>
     {{ if eq .Mode "new" }}
-      {{ index .Entity.Fiche.Labels "titleCreate" }}
+      {{ index .Entity.Fiche.Titles "create" }}
     {{ else }}
-      {{ index .Entity.Fiche.Labels "titleUpdate" }}
+      {{ index .Entity.Fiche.Titles "update" }}
     {{ end }}
   </title>
   <!-- CSS global Bootstrap -->
@@ -32,9 +32,9 @@
     <div class="card-header bg-primary text-white py-2">
       <h5 class="mb-0 text-center">
         {{ if eq .Mode "new" }}
-          {{ index .Entity.Fiche.Labels "titleCreate" }}
+          {{ index .Entity.Fiche.Titles "create" }}
         {{ else }}
-          {{ index .Entity.Fiche.Labels "titleUpdate" }}
+          {{ index .Entity.Fiche.Titles "update" }}
         {{ end }}
       </h5>
     </div>
@@ -227,8 +227,8 @@
         </div>
 
         <div class="mt-4 text-end">
-          <button type="submit" class="btn btn-success">{{ if eq .Mode "new" }}{{ index .Entity.Fiche.Labels "submitCreate" }}{{ else }}{{ index .Entity.Fiche.Labels "submitUpdate" }}{{ end }}</button>
-          <a href="/{{ .Entity.List.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}" class="btn btn-secondary ms-2">{{ index .Entity.Fiche.Labels "cancel" }}</a>
+          <button type="submit" class="btn btn-success">{{ if eq .Mode "new" }}{{ index .Entity.Fiche.ButtonLabels "submitCreate" }}{{ else }}{{ index .Entity.Fiche.ButtonLabels "submitUpdate" }}{{ end }}</button>
+          <a href="/{{ .Entity.List.Name }}?page={{ .Page }}&pageSize={{ .PageSize }}&sort={{ .SortField }}&order={{ .SortOrder }}" class="btn btn-secondary ms-2">{{ index .Entity.Fiche.ButtonLabels "cancel" }}</a>
         </div>
 
       </form>

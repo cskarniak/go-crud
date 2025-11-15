@@ -11,7 +11,7 @@ fields:
   - name: "id"
     type: "uint"
     label: "ID"
-    readonly: true # Règle de données : l'ID n'est JAMAIS modifiable
+    readonly: true
   - name: "cpt_nom"
     type: "string"
     label: "Nom"
@@ -82,7 +82,7 @@ fields:
   - name: "cpt_solde_calcule"
     type: "number"
     label: "Solde Calculé"
-    readonly: true # Règle de données : champ calculé non modifiable
+    readonly: true
   - name: "cpt_comptegerepourautrui"
     type: "boolean"
     label: "Compte pour autrui"
@@ -92,38 +92,23 @@ forms:
     type: "list"
     entity: "compte"
     config:
-      width: "90%"
-      pageBackgroundColor: "#EEE8AA"
-      formBackgroundColor: "#EEE8AA"
-      buttonFontSize: "0.8rem"
-      paginationButtonFontSize: "0.7rem" # Nouvelle propriété pour les boutons Précédent/Suivant
-      paginationTextFontSize: "0.75rem" # Nouvelle propriété pour le texte "Page X
-      pageSize: 10
-      defaultSortField: "id"
-      defaultSortOrder: "asc"
-      pageSizeOptions: [5, 10, 25, 50]
+      title: "Liste des comptes"
       columns: ["id", "cpt_nom", "cpt_solde_calcule"]
+      columnAlignments: ["center", "left", "right"]
+      columnWidths: ["80px", "auto", "150px"]
       searchableFields: ["id", "cpt_nom"]
       sortableFields: ["id", "cpt_nom", "cpt_solde_calcule"]
-      labels:
-        title: "Liste des comptes"
 
   - name: "compteFiche"
     type: "fiche"
     entity: "compte"
     config:
-      width: "700px"
-      pageBackgroundColor: "#FFFFFF" # Changé de #e9ecef à #ffffff
-      formBackgroundColor: "#FFFFFF"
-      # --- PROPRIÉTÉS POUR LES COULEURS DES ONGLETS ---
-      tabInactiveBackgroundColor: "#e9ecef" # Couleur de fond des onglets inactifs
-      tabActiveBackgroundColor: "##6495ED"   # Couleur de fond de l'onglet actif
-      tabContentBackgroundColor: "#f0f0f0"
-      labelColumnWidth: "30%"
-      tabLabelFontSize: "0.85rem"
-      buttonFontSize: "0.5rem"
-      formActionButtonsFontSize: "0.9rem"
       codes: "compteFiche_code"
+      
+      titles:
+        create: "Création d’un compte"
+        update: "Édition d’un compte"
+
       groups:
         - name: "Général"
           fields:
@@ -131,7 +116,7 @@ forms:
               align: "right"
             - name: "cpt_nom"
               size: 40
-              readonly: true # Règle de présentation : non modifiable dans ce formulaire
+              readonly: true
             - name: "cpt_commentaire"
               rows: 4
               size: 50
@@ -186,10 +171,3 @@ forms:
             - name: "cpt_date_synchro"
               size: 10
             - name: "cpt_comptegerepourautrui"
-
-      labels:
-        titleCreate: "Création d’un compte"
-        titleUpdate: "Édition d’un compte"
-        submitCreate: "Créer"
-        submitUpdate: "Enregistrer"
-        cancel: "Annuler"
