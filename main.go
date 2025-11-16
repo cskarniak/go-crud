@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -120,6 +121,31 @@ func setupRouter(cfg *config.Config) *gin.Engine {
 				return template.JS("null")
 			}
 			return template.JS(b)
+		},
+		"toInt": func(v interface{}) int {
+			if v == nil {
+				return 0
+			}
+			switch val := v.(type) {
+			case int:
+				return val
+			case int32:
+				return int(val)
+			case int64:
+				return int(val)
+			case float32:
+				return int(val)
+			case float64:
+				return int(val)
+			case string:
+				i, _ := strconv.Atoi(val)
+				return i
+			default:
+				// Tente une conversion via string au cas où
+				s := fmt.Sprintf("%v", v)
+				i, _ := strconv.Atoi(s)
+				return i
+			}
 		},
 	})
 

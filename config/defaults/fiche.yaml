@@ -17,8 +17,8 @@ labelColumnWidth: "25%"
 formContentMaxHeightAdjustment: "200px"
 
 # --- Polices ---
-tabLabelFontSize: "1rem"
-buttonFontSize: "1rem"
+tabLabelFontSize: "0.75rem"
+buttonFontSize: "0.75rem"
 formActionButtonsFontSize: "0.75rem"
 
 # --- Libellés ---

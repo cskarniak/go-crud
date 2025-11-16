@@ -90,8 +90,11 @@
                       {{ if eq $formField.Type "combo_base" }}
                         <!-- combo_base input -->
                         <select id="{{ $formField.Name }}" name="{{ $formField.Name }}" class="form-select{{ if index $.Errors $formField.Name }} is-invalid{{ end }}" {{ if $isReadOnly }}disabled{{ end }} {{ if $.Code }}{{ with index $.Code.FrontValidations $formField.Name }}{{ if .Required }} required{{ end }}{{ end }}{{ end }}>
+                          {{ $selectedValue := (printf "%v" (index $.DataRow $formField.Name)) }}
                           {{ range $opt := index $.ComboData $formField.Name }}
-                            <option value="{{ $opt.Value }}" {{ if eq (printf "%v" $opt.Value) (printf "%v" (index $.DataRow $formField.Name)) }} selected{{ end }}>{{ $opt.Label }}</option>
+                            <option value="{{ $opt.Value }}" {{ if eq (printf "%v" $opt.Value) $selectedValue }}selected{{ end }}>
+                              {{ $opt.Label }}
+                            </option>
                           {{ end }}
                         </select>
 

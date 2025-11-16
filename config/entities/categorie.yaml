@@ -19,8 +19,8 @@ fields:
     type: "boolean"
     label: "Sens"
   - name: "CodeRegroupement"
-    type: "boolean"
-    label: "Code Regroupement"
+    type: "uint"
+    label: "Regroupement"
   - name: "commentaire"
     type: "string"
     label: "Commentaire"
@@ -34,7 +34,7 @@ forms:
     type: "list"
     entity: "categorie"
     config:
-      title: "Liste des catégories" # Surcharge du titre par défaut
+      title: "Liste des catégories"
       columns:
         - "id"
         - "libelle"
@@ -66,4 +66,13 @@ forms:
           fields:
             - name: "sens"
             - name: "CodeRegroupement"
+              type: "combo_base"
+              comboConfig:
+                sql: |
+                  SELECT id, libelle
+                  FROM regroupement
+                  ORDER BY libelle
+                keyField: "id"
+                displayFields: ["libelle"]
+                separator: ""
             - name: "desactive"

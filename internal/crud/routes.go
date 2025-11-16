@@ -288,18 +288,16 @@ func (h *crudHandler) editForm(c *gin.Context) {
 					dataRow[f.Name] = formatNumber(num, ficheDef.Decimals, ficheDef.DecimalSeparator, ficheDef.ThousandsSeparator)
 				}
 			}
-		case "boolean": // Nouvelle logique pour les booléens
+		case "boolean":
 			// GORM peut renvoyer des booléens comme int64 (0 ou 1) ou bool
 			if val, ok := raw.(int64); ok {
 				dataRow[f.Name] = val != 0 // Convertit 0 en false, tout le reste en true
 			} else if val, ok := raw.(bool); ok {
 				dataRow[f.Name] = val
 			} else {
-				// Si ce n'est ni int64 ni bool, on essaie de parser la chaîne si c'est une chaîne
 				if s, ok := raw.(string); ok {
 					dataRow[f.Name] = (s == "true" || s == "1" || s == "on")
 				} else {
-					// Par défaut, si on ne sait pas, on considère false
 					dataRow[f.Name] = false
 				}
 			}
@@ -378,7 +376,7 @@ func (h *crudHandler) validate(c *gin.Context) map[string]string {
 }
 
 // bindAndConvertForm lit les données du formulaire POST, les convertit aux bons types
-// et gère les valeurs vides pour les transformer en nil (corrige le bug).
+// et gère les valeurs vides pour les transformer en nil.
 func (h *crudHandler) bindAndConvertForm(c *gin.Context) map[string]interface{} {
 	values := make(map[string]interface{})
 	
@@ -406,9 +404,13 @@ func (h *crudHandler) bindAndConvertForm(c *gin.Context) map[string]interface{} 
 					finalValue = nil
 				}
 			} else {
-				isSpecialType := fd.ComboConfig != nil || fd.VisionConfig != nil
-				if isSpecialType {
-					finalValue = raw
+				// Correction pour combo_base
+				if fd.Type == "combo_base" {
+					if i, err := strconv.Atoi(raw); err == nil {
+						finalValue = i
+					} else {
+						finalValue = nil // ou gérer l'erreur
+					}
 				} else {
 					switch props.Type {
 					case "uint", "int":
@@ -427,14 +429,14 @@ func (h *crudHandler) bindAndConvertForm(c *gin.Context) map[string]interface{} 
 							finalValue = false
 						}
 					case "date":
-						if raw == "" { // Si le champ date est vide
-							finalValue = time.Now() // Remplir avec la date/heure actuelle
+						if raw == "" {
+							finalValue = time.Now()
 						} else if t, err := time.Parse("2006-01-02", raw); err == nil {
 							finalValue = t
 						}
 					case "datetime":
-						if raw == "" { // Si le champ datetime est vide
-							finalValue = time.Now().Format("2006-01-02 15:04:05") // Remplir avec la date/heure actuelle formatée
+						if raw == "" {
+							finalValue = time.Now().Format("2006-01-02 15:04:05")
 						} else if props.DisplayFormat != "" {
 							t, err := time.Parse(props.DisplayFormat, raw)
 							if err == nil {
