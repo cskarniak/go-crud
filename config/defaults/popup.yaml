@@ -1,0 +1,47 @@
+# ==================================================
+# Fichier de configuration par défaut pour les popups
+# ==================================================
+# Ce fichier contrôle l'apparence de toutes les fenêtres de sélection (popups)
+# de type "vision" dans l'application.
+
+# --- Dimensions de la popup ---
+width: "80%"
+maxWidth: "800px"
+maxHeight: "90vh" # 90% de la hauteur de l'écran
+
+# --- En-tête de la popup ---
+headerBackgroundColor: "#f0f2f5" # Un gris clair et neutre
+headerTextColor: "#333333"
+titleFontSize: "1.1rem"
+
+# --- Corps de la popup ---
+bodyBackgroundColor: "#ffffff"
+searchFontSize: "0.9rem"
+
+# --- Table de données ---
+# Largeurs des colonnes (en %, px, etc.). Le nombre d'éléments doit correspondre au nombre de colonnes.
+columnWidths: ["15%", "70%", "15%"]
+# Alignement du texte dans les colonnes (left, center, right).
+columnAlignments: ["center", "left", "center"]
+# Taille de la police pour les en-têtes de colonne (th).
+headerFontSize: "0.9rem"
+
+# --- Lignes de la table ---
+# Hauteur de chaque ligne.
+rowHeight: "35px"
+# Taille de la police pour le texte dans les lignes.
+rowFontSize: "0.85rem"
+# Couleur du texte dans les lignes.
+rowFontColor: "#333333"
+# Couleur de fond pour les lignes impaires (1, 3, 5...).
+oddRowColor: "#ffffff"
+# Couleur de fond pour les lignes paires (2, 4, 6...).
+evenRowColor: "#f9f9f9"
+# Couleur de fond au survol de la souris.
+tableHoverColor: "#e9ecef"
+
+# --- Bouton de sélection dans les lignes ---
+# Mettre à `true` pour afficher un bouton "Sélectionner" dans chaque ligne.
+showSelectButton: true
+# Texte affiché sur le bouton de sélection.
+selectButtonLabel: "Choisir"

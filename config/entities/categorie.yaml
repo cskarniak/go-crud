@@ -25,9 +25,13 @@ fields:
     type: "string"
     label: "Commentaire"
     maxLength: 500
+  - name: "CategorieParente"
+    type: "uint"
+    label: "catégorie Parente"
   - name: "desactive"
     type: "boolean"
     label: "Désactivé"
+    
 
 forms:
   - name: "categorieList"
@@ -74,5 +78,22 @@ forms:
                   ORDER BY libelle
                 keyField: "id"
                 displayFields: ["libelle"]
-                separator: ""
+                separator: "-"
+            - name: "CategorieParente"
+              size: 30
+              type: vision
+              cssClass: "field-podvisu"
+              visionConfig:
+                sql: |
+                  SELECT id,libelle
+                  FROM categorie
+                  WHERE 1 = 1
+                  ORDER BY libelle
+                keyField: "id"
+                displayFields:
+                  - "id"
+                  - "libelle"
+                returnField: "id"
+                returnFieldDisplay: "libelle"
+                modalTitle: "Sélectionner une catégorie parente"
             - name: "desactive"

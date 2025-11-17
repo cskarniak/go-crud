@@ -12,10 +12,34 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// PopupConfig définit le style des fenêtres modales (popups).
+type PopupConfig struct {
+	Width                 string   `yaml:"width"`
+	MaxWidth              string   `yaml:"maxWidth"`
+	MaxHeight             string   `yaml:"maxHeight"`
+	HeaderBackgroundColor string   `yaml:"headerBackgroundColor"`
+	HeaderTextColor       string   `yaml:"headerTextColor"`
+	TitleFontSize         string   `yaml:"titleFontSize"`
+	BodyBackgroundColor   string   `yaml:"bodyBackgroundColor"`
+	SearchFontSize        string   `yaml:"searchFontSize"`
+	ColumnWidths          []string `yaml:"columnWidths"`
+	ColumnAlignments      []string `yaml:"columnAlignments"`
+	HeaderFontSize        string   `yaml:"headerFontSize"`
+	RowHeight             string   `yaml:"rowHeight"`
+	RowFontSize           string   `yaml:"rowFontSize"`
+	RowFontColor          string   `yaml:"rowFontColor"`
+	EvenRowColor          string   `yaml:"evenRowColor"`
+	OddRowColor           string   `yaml:"oddRowColor"`
+	TableHoverColor       string   `yaml:"tableHoverColor"`
+	ShowSelectButton      bool     `yaml:"showSelectButton"`
+	SelectButtonLabel     string   `yaml:"selectButtonLabel"`
+}
+
 // Variables globales pour stocker les configurations par défaut
 var (
 	defaultListConfig  ListConfig
 	defaultFicheConfig FicheConfig
+	DefaultPopupConfig PopupConfig
 )
 
 // init est exécuté une seule fois au démarrage pour charger les configurations par défaut.
@@ -25,6 +49,9 @@ func init() {
 	}
 	if err := loader.Load("config/defaults/fiche.yaml", &defaultFicheConfig); err != nil {
 		log.Printf("Attention : impossible de charger la configuration par défaut pour les fiches : %v", err)
+	}
+	if err := loader.Load("config/defaults/popup.yaml", &DefaultPopupConfig); err != nil {
+		log.Printf("Attention : impossible de charger la configuration par défaut pour les popups : %v", err)
 	}
 }
 
@@ -38,11 +65,12 @@ type ComboFieldConfig struct {
 
 // VisionFieldConfig est pour le CHAMP de type vision (popup)
 type VisionFieldConfig struct {
-	SQL           string   `yaml:"sql"`
-	KeyField      string   `yaml:"keyField"`
-	DisplayFields []string `yaml:"displayFields"`
-	ReturnField   string   `yaml:"returnField"`
-	ModalTitle    string   `yaml:"modalTitle"`
+	SQL                string   `yaml:"sql"`
+	KeyField           string   `yaml:"keyField"`
+	DisplayFields      []string `yaml:"displayFields"`
+	ReturnField        string   `yaml:"returnField"`
+	ReturnFieldDisplay string   `yaml:"returnFieldDisplay"`
+	ModalTitle         string   `yaml:"modalTitle"`
 }
 
 // --- NOUVEAUX types de config pour le FORMULAIRE de type 'vision' ---
@@ -138,6 +166,15 @@ type FicheConfig struct {
 	ButtonFontSize             string            `yaml:"buttonFontSize,omitempty"`
 	FormActionButtonsFontSize  string            `yaml:"formActionButtonsFontSize,omitempty"`
 	FormContentMaxHeightAdjustment string        `yaml:"formContentMaxHeightAdjustment,omitempty"`
+}
+
+// GetAllFields renvoie une liste plate de tous les champs de tous les groupes.
+func (fc *FicheConfig) GetAllFields() []FieldDef {
+	var allFields []FieldDef
+	for _, group := range fc.Groups {
+		allFields = append(allFields, group.Fields...)
+	}
+	return allFields
 }
 
 // ListConfig configuration pour la liste

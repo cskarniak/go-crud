@@ -1,82 +1,55 @@
 /* popup.css */
 
-/* =====================================================
-   BLOC DE CONFIGURATION DES COULEURS DU POPUP
-===================================================== */
-:root {
-  /* Couleurs du tableau */
-  --popup-header-bg-color: #007bff;
-  --popup-header-text-color: #ffffff;
-  --popup-odd-row-bg-color: #f9faff;
-  --popup-even-row-bg-color: #e5f0ff;
-  --popup-hover-row-bg-color: #d0e7ff;
-}
-/* ===================================================== */
-
-
 /* --------------------------------------------------
    Styles de base pour toutes les popups "vision"
-   À appliquer sur la classe .vision-modal
    -------------------------------------------------- */
 
-/* 1) Largeur maximale de la fenêtre */
-.vision-modal .modal-dialog {
-  max-width: 600px;
-}
-
-/* 2) Mise en forme du contenu */
+/* 1) Contenu du modal */
 .vision-modal .modal-content {
   border-radius: 0.5rem;
   overflow: hidden;
 }
 
-/* 3) Styles du tableau */
-.vision-modal table {
+/* 2) Corps du modal pour le défilement */
+.vision-modal .modal-body {
+  overflow-y: auto;
+}
+
+/* 3) Styles de base du tableau */
+.vision-modal .vision-table {
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
 }
 
-/* 4) Cellules (padding, overflow) */
-.vision-modal table th,
-.vision-modal table td {
-  padding: 0.5rem;
+/* 4) Cellules du tableau (en-têtes et données) */
+.vision-modal .vision-table th,
+.vision-modal .vision-table td {
+  padding: 0.75rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: middle;
 }
 
-/* 5) Hauteur et centrage vertical */
-.vision-modal table tbody td {
-  height: 30px !important;
-  line-height: 30px !important;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
+/* 5) Application des styles de police aux cellules de données (TD) */
+.vision-modal .vision-table tbody td {
+  font-size: var(--row-font-size);
+  color: var(--row-font-color);
 }
 
-/* 6) Zebra-striping */
-.vision-modal table tbody tr:nth-child(odd) td {
-  background-color: var(--popup-odd-row-bg-color) !important;
+/* 6) Couleurs des lignes et effet de survol */
+.vision-table tbody tr:nth-child(odd) {
+  background-color: var(--odd-row-color);
 }
-.vision-modal table tbody tr:nth-child(even) td {
-  background-color: var(--popup-even-row-bg-color) !important;
+.vision-table tbody tr:nth-child(even) {
+  background-color: var(--even-row-color);
 }
-
-/* 7) Effet au survol */
-.vision-modal table tbody tr:hover td {
-  background-color: var(--popup-hover-row-bg-color) !important;
+.vision-table tbody tr:hover {
+  background-color: var(--table-hover-color);
 }
 
-/* 8) En-tête de tableau */
-.vision-modal table thead th {
-  background-color: var(--popup-header-bg-color);
-  color: var(--popup-header-text-color);
-  font-weight: 600;
-  padding: 0.75rem;
-  text-align: left;
-}
-
-/* 9) Bouton de fermeture */
+/* 7) Bouton de fermeture (pour assurer la visibilité sur les en-têtes sombres) */
 .vision-modal .modal-header .btn-close {
   filter: brightness(0) invert(1);
 }

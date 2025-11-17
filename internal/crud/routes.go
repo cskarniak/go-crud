@@ -214,16 +214,17 @@ func (h *crudHandler) newForm(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "form.html", gin.H{
-		"Entity":    h.ec,
-		"Code":      h.ec.Code,
-		"Mode":      "new",
-		"DataRow":   dataRow,
-		"Errors":    map[string]string{},
-		"ComboData": h.prepareComboData(),
-		"Page":      c.Query("page"),
-		"PageSize":  c.Query("pageSize"),
-		"SortField": c.Query("sort"),
-		"SortOrder": c.Query("order"),
+		"Entity":      h.ec,
+		"Code":        h.ec.Code,
+		"Mode":        "new",
+		"DataRow":     dataRow,
+		"Errors":      map[string]string{},
+		"ComboData":   h.prepareComboData(),
+		"PopupConfig": entity.DefaultPopupConfig,
+		"Page":        c.Query("page"),
+		"PageSize":    c.Query("pageSize"),
+		"SortField":   c.Query("sort"),
+		"SortOrder":   c.Query("order"),
 	})
 }
 
@@ -266,6 +267,38 @@ func (h *crudHandler) editForm(c *gin.Context) {
 		return
 	}
 
+	// --- NOUVEAU : Gestion des champs 'vision' ---
+	for _, field := range h.ec.Fiche.GetAllFields() {
+		if field.Type == "vision" && field.VisionConfig != nil {
+			vc := field.VisionConfig
+			foreignKeyValue, ok := dataRow[field.Name]
+
+			// On s'assure qu'il y a une valeur à chercher et que la config est là
+			if ok && foreignKeyValue != nil && vc.ReturnFieldDisplay != "" {
+				var displayResult struct {
+					DisplayValue string
+				}
+				// On construit une sous-requête pour trouver la table et le champ d'affichage
+				// Note: Ceci est une simplification. Une vraie solution devrait parser le SQL de `visionData`.
+				// Pour l'instant, on suppose que la table est la même que l'entité en cours.
+				// C'est un cas commun (ex: categorie.CategorieParente -> categorie.libelle)
+				// ATTENTION: Cette requête peut échouer si la table dans vc.SQL est différente de h.ec.Table
+				err := h.db.Table(h.ec.Table).
+					Select(fmt.Sprintf("%s as display_value", vc.ReturnFieldDisplay)).
+					Where(fmt.Sprintf("%s = ?", vc.ReturnField), foreignKeyValue).
+					Take(&displayResult).Error
+
+				if err == nil {
+					dataRow[field.Name+"_display"] = displayResult.DisplayValue
+				} else {
+					log.Printf("WARN: Impossible de récupérer la valeur d'affichage pour le champ vision '%s': %v", field.Name, err)
+				}
+			}
+		}
+	}
+	// --- FIN de la nouvelle section ---
+
+
 	// Formater les dates et les nombres pour l'affichage dans le formulaire
 	const dbFormat = "2006-01-02 15:04:05" // Format de stockage
 
@@ -305,16 +338,17 @@ func (h *crudHandler) editForm(c *gin.Context) {
 	}
 
 	c.HTML(http.StatusOK, "form.html", gin.H{
-		"Entity":    h.ec,
-		"Code":      h.ec.Code,
-		"Mode":      "edit",
-		"DataRow":   dataRow,
-		"Errors":    map[string]string{},
-		"ComboData": h.prepareComboData(),
-		"Page":      c.Query("page"),
-		"PageSize":  c.Query("pageSize"),
-		"SortField": c.Query("sort"),
-		"SortOrder": c.Query("order"),
+		"Entity":      h.ec,
+		"Code":        h.ec.Code,
+		"Mode":        "edit",
+		"DataRow":     dataRow,
+		"Errors":      map[string]string{},
+		"ComboData":   h.prepareComboData(),
+		"PopupConfig": entity.DefaultPopupConfig,
+		"Page":        c.Query("page"),
+		"PageSize":    c.Query("pageSize"),
+		"SortField":   c.Query("sort"),
+		"SortOrder":   c.Query("order"),
 	})
 }
 
@@ -499,16 +533,17 @@ func (h *crudHandler) repopulateFormOnError(c *gin.Context, mode string, errors 
 	}
 
 	c.HTML(http.StatusBadRequest, "form.html", gin.H{
-		"Entity":    h.ec,
-		"Code":      h.ec.Code,
-		"Mode":      mode,
-		"DataRow":   dataRow,
-		"Errors":    errors,
-		"ComboData": h.prepareComboData(),
-		"Page":      c.Query("page"),
-		"PageSize":  c.Query("pageSize"),
-		"SortField": c.Query("sort"),
-		"SortOrder": c.Query("order"),
+		"Entity":      h.ec,
+		"Code":        h.ec.Code,
+		"Mode":        mode,
+		"DataRow":     dataRow,
+		"Errors":      errors,
+		"ComboData":   h.prepareComboData(),
+		"PopupConfig": entity.DefaultPopupConfig,
+		"Page":        c.Query("page"),
+		"PageSize":    c.Query("pageSize"),
+		"SortField":   c.Query("sort"),
+		"SortOrder":   c.Query("order"),
 	})
 }
 
